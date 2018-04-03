@@ -1,0 +1,173 @@
+#!/usr/bin/env python
+
+def get_arguments():
+    """Parse arguments and return Namespace object."""
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-s", "--serie", type=str,
+                        help="Miseq serie nummer", required=True)
+    parser.add_argument("-t", "--threads", type=int, default=10,
+                        help="Number of threads for snakemake")
+    parser.add_argument("-p", "--pipeline", action='store_true',
+                        help="Only run the pipeline")
+    parser.add_argument("-r", "--rule", default='END',
+                        help="Ask snakemake to run specific rule")
+    parser.add_argument("--download", action='store_true',
+                        help="Download reads from basespace")
+    parser.add_argument("--cleanup", action='store_true',
+                        help="Move data to archive")
+    parser.add_argument("--hester", action='store_true',
+                        help="Run is rehybed @ MiSeq")
+    args = parser.parse_args()
+    return args
+
+
+def get_header(samplesheet):
+    "Read samplesheet and find line with Sample_ID. Return integer."
+    with open(samplesheet, 'r') as f:
+        for i, line in enumerate(f):
+            if line.startswith('Sample_ID'):
+                return i
+
+
+def parse_samplesheet(samplesheet):
+    """Read samplesheet part with sample info. Use ngsscriptlibrary to get
+    targets to use and analyses to perform. Return dict.
+    """
+    samples = list()
+    with open(samplesheet) as f:
+        reader = csv.reader(f)
+        for i, line in enumerate(reader):
+            if i > get_header(samplesheet):
+                samples.append(line)
+    sample_genesis = list()
+    for line in samples:
+        sample = line[0]
+        genesis = line[-1]
+        genesis = genesis.replace('.NGS', '')
+        sample_genesis.append((sample, genesis))
+    return sample_genesis
+
+
+def run_command(command):
+    subprocess.call(command, shell=True, stderr=subprocess.STDOUT)
+
+def create_dir(dir_to_create):
+    try:
+        os.makedirs(dir_to_create)
+    except FileExistsError as e:
+        pass
+
+
+def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie):
+    folders = ['alleen cnv/brief gemaakt', 'nagekeken in Cartagenia/brief gemaakt',
+               'CheckJoep', 'negatief/brief gemaakt', 'positief/brief gemaakt']
+
+    shutil.copyfile('{}/output/MS{}_report.xlsx'.format(workdir, serie),
+                    '{}/MS{}_report.xlsx'.format(outputdir, serie))
+    shutil.copyfile('{}/output/MS{}_QC.pdf'.format(workdir, serie),
+                    '{}/MS{}_QC.pdf'.format(outputdir, serie))
+
+    pdone = list()
+
+    for s, p in sample_pakket:
+        pdir = '{}/{}'.format(outputdir, p)
+
+        if p not in pdone:
+            pdone.append(p)
+            create_dir(pdir)
+            for folder in folders:
+                create_dir('{}/{}'.format(pdir, folder))
+
+        bam = glob.glob('{}/output/{}*.bam'.format(workdir, s))[0]
+        bai = glob.glob('{}/output/{}*.bai'.format(workdir, s))[0]
+        vcf = glob.glob('{}/output/{}*.vcf'.format(workdir, s))[0]
+        idx = glob.glob('{}/output/{}*.vcf.idx'.format(workdir, s))[0]
+        report = glob.glob('{}/output/{}*.xlsx'.format(workdir, s))[0]
+
+        for f in bam, bai, vcf, idx, report:
+            fb, fn = os.path.split(f)
+            if not os.path.isfile('{}/{}/{}'.format(outputdir, p, fn)):
+                fn_base, fn_ext = os.path.splitext(fn)
+                if fn_ext == '.vcf':
+                    fn = '{}.{}{}'.format(fn_base, p, fn_ext)
+                elif fn_ext == '.idx':
+                    fn_base2, fn_ext2 = os.path.splitext(fn_base)
+                    fn = '{}.{}{}{}'.format(fn_base2, p, fn_ext2, fn_ext)
+
+                shutil.copyfile(f, '{}/{}/{}'.format(outputdir, p, fn))
+
+
+if __name__ == '__main__':
+    import argparse
+    import os
+    import shutil
+    import subprocess
+    import glob
+    import csv
+
+    args = get_arguments()
+    serie = args.serie
+    threads = args.threads
+    rule = args.rule
+    bserie = serie
+    if args.hester:
+        bserie = r'{}\ \(2\)'.format(serie)
+
+    if not args.download and not args.pipeline and not args.cleanup:
+        args.download = True
+        args.pipeline = True
+        args.cleanup = True
+
+    BASEDIR = "/data/dnadiag/reads"
+    ARCHIEF = "/mnt/kg_nextgen_archief/IlluminaRawData/"
+    SCRIPTHOME = os.path.dirname(os.path.realpath(__file__))
+    CONFIG = os.path.join(SCRIPTHOME, 'diagnostiek', 'docs', 'config.yaml')
+    READS = os.path.join(BASEDIR, 'MS{}'.format(serie))
+    BASEMOUNT = os.path.join(BASEDIR, 'basespace')
+    SAMPLESHEET = os.path.join(BASEMOUNT, 'Runs', bserie, 'Files', 'SampleSheet.csv')
+    SERIEDIR = os.path.join('/', 'mnt', 'ngs', 'Analyse*MiSEQ', 'MiSeq*Serie*{}*'.format(serie))
+    SNPCHECKDIR = os.path.join(SERIEDIR, 'SNPcheck')
+
+    for _ in glob.iglob('{}/*'.format(SERIEDIR)):
+        if _.endswith('Data-analyse'):
+            OUTPUTDIR = _
+
+    if args.download:
+        os.mkdir(READS)
+        run_command('basemount {} -c ormook'.format(BASEMOUNT))
+        run_command('cp -r {}/basespace/Projects/{}/Samples/*/Files/*.gz {}'.format(BASEDIR, serie, READS))
+        run_command('cp {} {}'.format(SAMPLESHEET, READS))
+
+        try:
+            os.mkdir('{}/MiSeqRunMetrics/{}'.format(ARCHIEF, serie))
+        except FileExistsError as e:
+            print(e)
+        else:
+            run_command('cp {}/Runs/{}/Files/*.txt {}/MiSeqRunMetrics/{}'.format(BASEMOUNT, bserie, ARCHIEF, serie))
+            run_command('cp {}/Runs/{}/Files/*.xml {}/MiSeqRunMetrics/{}'.format(BASEMOUNT, bserie, ARCHIEF, serie))
+            run_command('cp -r {}/Runs/{}/Files/InterOp {}/MiSeqRunMetrics/{}'.format(BASEMOUNT, bserie, ARCHIEF, serie))
+            run_command('cp {} {}/MiSeqRunMetrics/{}'.format(SAMPLESHEET, ARCHIEF, serie))
+
+        run_command('basemount --unmount {}'.format(BASEMOUNT))
+        run_command('cp -r {} {}'.format(SNPCHECKDIR, READS))
+
+    if args.pipeline:
+        samples = [_[0] for _ in parse_samplesheet('{}/SampleSheet.csv'.format(READS))]
+        for sample in samples:
+            snpcheckfile = os.path.join(READS, 'SNPcheck', '{}.qpcrsnpcheck'.format(sample))
+            if not os.path.isfile(snpcheckfile):
+                run_command('touch {}'.format(snpcheckfile))
+
+
+        run_command('snakemake -s {}/diagnostiek/Snakefile -j{} --configfile {} --directory {} -R {}'.format(SCRIPTHOME, threads, CONFIG, READS, rule))
+
+    if args.cleanup:
+        samples = parse_samplesheet('{}/SampleSheet.csv'.format(READS))
+        move_data_to_diagnostic_tree(samples, OUTPUTDIR, READS, serie)
+        try:
+            os.mkdir('{}/MiSeq/Diagnostiek/MS{}'.format(ARCHIEF, serie))
+        except FileExistsError as e:
+            print(e)
+        else:
+            run_command('cp {}/reads/*.gz {}/MiSeq/Diagnostiek/MS{}'.format(READS, ARCHIEF, serie))

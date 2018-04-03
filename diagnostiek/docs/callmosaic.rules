@@ -1,0 +1,83 @@
+__author__ = "Martin Haagmans (https://github.com/zaag)"
+__license__ = "MIT"
+
+import csv
+from collections import defaultdict
+
+def parse_bed(fn):
+    with open(fn) as f:
+        reader = csv.reader(f, delimiter='\t')
+        for line in reader:
+            chrom, start, end, *_ = line
+            yield chrom, start, end
+
+def good_alignment(alignment):
+    duplicate = alignment.is_duplicate
+    mapped = not alignment.is_unmapped
+    mapq20 = alignment.mapping_quality > 20
+    return (not duplicate and mapped and mapq20)
+
+def cigar_has_insertion(cigar):
+    has_insertion = False
+    if cigar is not None:
+        if 'I' in cigar:
+            has_insertion = True
+    return has_insertion
+
+def parse_cigartuple(cigartuple, read_start, chrom):
+    for tup in cigartuple:
+        operation, length = tup
+        if operation == 2:
+            continue
+        elif operation == 1:
+            locus = '{}:{}'.format(chrom, read_start)
+            return locus, length
+        else:
+            read_start += length
+
+def get_indel_dicts(bamfile, target):
+
+    indel_coverage = defaultdict(int)
+    indel_length = defaultdict(list)
+    indel_length_coverage = dict()
+
+    samfile = pysam.AlignmentFile(bamfile, "rb")
+
+    for c, s, e in parse_bed(target):
+
+        for alignment in samfile.fetch(contig=c, start=int(s), stop=int(e)):
+
+            if good_alignment(alignment) and cigar_has_insertion(alignment.cigarstring):
+
+                read_start = alignment.get_reference_positions(full_length=True)[0]
+
+                if read_start is None:
+                    continue
+
+                locus, length = parse_cigartuple(alignment.cigar, read_start, alignment.reference_name)
+                if indel_length[locus]:
+                    indel_length[locus].append(length)
+                else:
+                    indel_length[locus] = [length]
+
+                indel_coverage[locus] += 1
+
+    samfile.close()
+
+    for locus, coverage in indel_coverage.items():
+        indel_length_coverage[locus] = set(indel_length[locus]), int(coverage)
+
+    return indel_length_coverage
+
+
+rule mosaicdetection:
+    input:
+        rules.depthofcoverage.output[0]
+    output:
+        temp("gatkfiles/{sample}.mosaic2db.txt")
+    message:
+        "Mosaic 2 db"
+    log:
+        "logfiles/{sample}.Mosa2db.log"
+    run:
+        shell("touch {output}")

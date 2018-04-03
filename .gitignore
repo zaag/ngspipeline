@@ -1,0 +1,12 @@
+alignments/
+gatkfiles/
+logfiles/
+output/
+picardmetrics/
+__pycache__
+recalinput.list
+.snakemake/
+*.xlsx
+reads/
+SampleSheet.csv
+config.yaml

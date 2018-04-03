@@ -1,0 +1,110 @@
+__author__ = "Martin Haagmans (https://github.com/zaag)"
+__license__ = "MIT"
+
+rule qcplots:
+    input:
+        rules.countbases.output,
+        expand(rules.insertsizemetrics.output, sample=samples),
+        expand(rules.filtervariants.output, sample=samples)
+    output:
+        "output/MS{}_QC.pdf".format(serie)
+    message:
+        "Creating QC plots for serie"
+    run:
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+        import vcf
+        import pybedtools
+        from matplotlib.backends.backend_pdf import PdfPages
+
+        def get_insert_size_serie(serie):
+            conn = sqlite3.connect(METRICSDB)
+            sql = '''
+            SELECT DISTINCT SAMPLE, MEAN_INSERT_SIZE,
+            STANDARD_DEVIATION FROM insertsize WHERE SERIE='{}'
+            '''.format(serie)
+            df = pd.read_sql(sql, con=conn, index_col='SAMPLE')
+            df.columns = 'Mean', 'StDev'
+            df.index.rename('Sample', inplace=True)
+            df.sort_index(inplace=True)
+            conn.close()
+            return df
+
+        def plot_basepercentages(basepercentages, outputpdf):
+            df = pd.read_csv(basepercentages, sep='\t', index_col=0)
+            df.index = [i.split('.')[0] for i in df.index]
+            df.sort_index(inplace=True)
+            sample_target = list()
+            for sample in sorted(input_dict.keys()):
+                target = input_dict[sample]['pakket']
+                sample_target.append((sample, target))
+            index = pd.MultiIndex.from_tuples(sample_target,
+                                              names=['Target', 'index'])
+            df.index = index
+            df.index.rename(['Sample ID', 'Pakket'], inplace=True)
+            df.sort_index(inplace=True)
+            fig = plt.figure(figsize=(12, 9))
+            ax = plt.subplot()
+            df.plot(ax=ax, style='8', clip_on=False, rot=90,
+                    use_index=True, ylim=(0, 0.5),
+                    title='Library QC: Basepercentages R1')
+            xlabel = ['{}:{}'.format(i[0], i[1]) for i in df.index]
+            xticks = np.arange(0, len(xlabel), 1.0)
+            ax.xaxis.set_ticks(xticks)
+            ax.set_xticklabels(xlabel)
+            plt.tight_layout()
+            outputpdf.savefig()
+            plt.close()
+
+        def plot_insertsizes(df, outputpdf):
+            sample_target = list()
+            for sample in df.index:
+                target = input_dict[sample]['pakket']
+                sample_target.append((sample, target))
+            index = pd.MultiIndex.from_tuples(sample_target,
+                                              names=['Target', 'index'])
+            df.index = index
+            df.index.rename(['Sample ID', 'Pakket'], inplace=True)
+            df.sort_index(inplace=True)
+            fig = plt.figure(figsize=(12, 9))
+            ax = plt.subplot()
+            df.plot(ax=ax, kind='bar', rot=90, use_index=True,
+                    ylim=(0, 350), title='Library QC: InsertSize')
+            xlabel = ['{}:{}'.format(i[0], i[1]) for i in df.index]
+            xticks = np.arange(0, len(xlabel), 1.0)
+            ax.xaxis.set_ticks(xticks)
+            ax.set_xticklabels(xlabel)
+            plt.tight_layout()
+            outputpdf.savefig()
+            plt.close()
+
+        def plot_varpercentages_vcf(vcffile, plotfile, targetfile, title):
+            vcfreader = vcf.Reader(open(vcffile, 'r'))
+            varpercentages = [[(call.data.AD[1] / record.INFO['DP'])
+                              for call in record]
+                              for record in vcfreader
+                              if record.is_snp and not record.FILTER]
+
+            fig = plt.figure()
+            ax = plt.subplot()
+            ax.plot(varpercentages, 'd')
+            ax.set_ylim(0, 1)
+            ax.axhline(y=0.5)
+            plt.title(title)
+            try:
+                plt.savefig(plotfile, dpi=80)
+            except TypeError:
+                plotfile.savefig()
+            plt.close()
+
+        pdf = PdfPages(output[0])
+        plot_basepercentages(input[0], pdf)
+        plot_insertsizes(get_insert_size_serie(serie), pdf)
+        for sample in samples:
+            pakkettarget = input_dict[sample]['pakkettarget']
+            t = pybedtools.BedTool(pakkettarget)
+            v = pybedtools.BedTool('output/{}.filtered.vcf'.format(sample))
+            x = v.intersect(t, header=True)
+            plot_varpercentages_vcf(x.fn, pdf, pakkettarget,
+                                    '{}:{}'.format(sample, input_dict[sample]['pakket']))
+        pdf.close()
