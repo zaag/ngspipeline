@@ -89,7 +89,9 @@ rule samplereport:
         insertsize = rules.insertsizemetrics.output.tabel,
         hsmetrics = rules.hsmetrics.output,
         snpcheck = rules.duplicatesnpcheck.output.snpcomp,
-        cnvdone = rules.cnvdetection.output
+        cnvdone = rules.cnvdetection.output,
+        mosapng = rules.createmosaicoutput.output.png,
+        mosatable = rules.createmosaicoutput.output.table
 
     output:
         "output/{sample}.xlsx"

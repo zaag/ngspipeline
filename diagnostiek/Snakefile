@@ -18,7 +18,7 @@ import matplotlib
 import numpy as np
 import pandas as pd
 
-sys.path.append('/home/mahaamgmans/Documents/ngsscriptlibrary')
+sys.path.append('/home/mahaagmans/Documents/ngsscriptlibrary')
 sys.path.append('/data/dnadiag/ngsscriptlibrary')
 
 from ngsscriptlibrary import TargetDatabase
@@ -39,6 +39,7 @@ pyCNV = config['pyCNV']
 # Define files
 TARGETDB = os.path.join(TARGETREPO, 'varia', 'captures.sqlite')
 METRICSDB = os.path.join(DBREPO, 'metrics.sqlite')
+SOMOSADB = os.path.join(DBREPO, 'SO.mosaic.sqlite')
 SNPCHECK = os.path.join(TARGETREPO, 'varia', 'NGS-SNPcheck.vcf')
 samplesheet = 'SampleSheet.csv'
 
@@ -518,12 +519,11 @@ include:
 include:
     'docs/qcplots.rules'
 
+
 rule END:
     input:
         expand(rules.filtervariants.output, sample=samples),
         expand(rules.samplereport.output, sample=samples),
         expand(rules.markduplicates.output.bam, sample=samples),
-        expand(rules.mosaicdetection.output, sample=samples),
-        rules.cnvdetection.output,
         rules.qcplots.output,
         rules.seriereport.output

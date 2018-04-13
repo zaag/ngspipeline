@@ -1,78 +1,13 @@
 __author__ = "Martin Haagmans (https://github.com/zaag)"
 __license__ = "MIT"
 
-import csv
-from collections import defaultdict
+from ngsscriptlibrary.mosaic import *
 
-def parse_bed(fn):
-    with open(fn) as f:
-        reader = csv.reader(f, delimiter='\t')
-        for line in reader:
-            chrom, start, end, *_ = line
-            yield chrom, start, end
-
-def good_alignment(alignment):
-    duplicate = alignment.is_duplicate
-    mapped = not alignment.is_unmapped
-    mapq20 = alignment.mapping_quality > 20
-    return (not duplicate and mapped and mapq20)
-
-def cigar_has_insertion(cigar):
-    has_insertion = False
-    if cigar is not None:
-        if 'I' in cigar:
-            has_insertion = True
-    return has_insertion
-
-def parse_cigartuple(cigartuple, read_start, chrom):
-    for tup in cigartuple:
-        operation, length = tup
-        if operation == 2:
-            continue
-        elif operation == 1:
-            locus = '{}:{}'.format(chrom, read_start)
-            return locus, length
-        else:
-            read_start += length
-
-def get_indel_dicts(bamfile, target):
-
-    indel_coverage = defaultdict(int)
-    indel_length = defaultdict(list)
-    indel_length_coverage = dict()
-
-    samfile = pysam.AlignmentFile(bamfile, "rb")
-
-    for c, s, e in parse_bed(target):
-
-        for alignment in samfile.fetch(contig=c, start=int(s), stop=int(e)):
-
-            if good_alignment(alignment) and cigar_has_insertion(alignment.cigarstring):
-
-                read_start = alignment.get_reference_positions(full_length=True)[0]
-
-                if read_start is None:
-                    continue
-
-                locus, length = parse_cigartuple(alignment.cigar, read_start, alignment.reference_name)
-                if indel_length[locus]:
-                    indel_length[locus].append(length)
-                else:
-                    indel_length[locus] = [length]
-
-                indel_coverage[locus] += 1
-
-    samfile.close()
-
-    for locus, coverage in indel_coverage.items():
-        indel_length_coverage[locus] = set(indel_length[locus]), int(coverage)
-
-    return indel_length_coverage
-
-
-rule mosaicdetection:
+rule addmosaicdata:
     input:
-        rules.depthofcoverage.output[0]
+        docfile=rules.depthofcoverage.output[0],
+        bamfile=rules.markduplicates.output.bam,
+        vcffile=rules.filtervariants.output[0]
     output:
         temp("gatkfiles/{sample}.mosaic2db.txt")
     message:
@@ -80,4 +15,55 @@ rule mosaicdetection:
     log:
         "logfiles/{sample}.Mosa2db.log"
     run:
-        shell("touch {output}")
+        if not input_dict[wildcards.sample]['mozaiek']:
+            shell("touch {output}")
+        elif input_dict[wildcards.sample]['mozaiek']:
+            add_sampledata_to_database(input.bamfile,
+                                       input.vcffile,
+                                       input.docfile,
+                                       wildcards.sample,
+                                       input_dict[wildcards.sample]['pakkettarget'],
+                                       SOMOSADB)
+            shell("touch {output}")
+
+
+
+rule createmosaicoutput:
+    input:
+        expand(rules.addmosaicdata.output, sample=samples)
+    output:
+        png=temp("gatkfiles/{sample}.mosaic.png"),
+        lc=temp("gatkfiles/{sample}.mosaic.out.txt")
+    message:
+        "Plot mosaic data"
+    log:
+        "logfiles/{sample}.MosaPlot.log"
+    run:
+        if not input_dict[wildcards.sample]['mozaiek']:
+            shell("touch {output.png} && touch {output.table}")
+        elif input_dict[wildcards.sample]['mozaiek']:
+            bases = 'A C G T I D'.split()
+            sdata, adata = get_data_to_plot(wildcards.sample, SOMOSADB)
+            plot_data(sdata, adata, output.png)
+            MDB = Mosaic(SOMOSADB)
+            ref = MDB.get_reference_dict()
+            lcvar = MDB.get_sample_low_coverage_var(wildcards.sample)
+            lcd = MDB.parse_sample_low_coverage_var(lcvar)
+            lcref = MDB.get_sample_low_coverage_ref(wildcards.sample)
+
+            for locus in lcref:
+                lcd[locus] = dict()
+                for base in bases:
+                    if base == ref[locus]:
+                        lcd[locus][base] = 1
+                    elif base == ref[locus]:
+                        lcd[locus][base] = 0
+
+            with open(output.lc, 'w') as f:
+                header = 'locus\t{}\n'.format('\t'.join([base for base in bases]))
+                f.write(header)
+                for locus in sorted(lcd.keys()):
+                    percentages = [str(lcd[locus][base]) if base in lcd[locus]
+                                    else '.' for base in bases ]
+                    out = '{}\t{}\n'.format(locus, '\t'.join(percentages))
+                    f.write(out)

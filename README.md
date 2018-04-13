@@ -2,7 +2,7 @@
 
 # NGS workflow
 
-De AMC-pipeline is een [snakemake](http://snakemake.readthedocs.io/en/stable/)
+De diagostiekpipeline is een [snakemake](http://snakemake.readthedocs.io/en/stable/)
 workflow.  Snakemake is een workflow management systeem dat gebruik maakt van
 door de gebruiker beschreven regels. Deze regels definieren hoe van bepaalde
 input files (bijvoorbeeld fastq's) output files te maken (bam, vcf etc.).
@@ -37,7 +37,7 @@ temp-file worden aangemerkt en dat betekent dat snakemake het bestand verwijdert
 wanneer het niet meer nodig is in de pipeline.
 
 Na het opstellen van de regels wordt aangegeven wat de
-gewenste outputfiles zijn. In de AMC-pipeline zijn dit sowieso per patient een
+gewenste outputfiles zijn. In de diagnostiekpipeline zijn dit sowieso per patient een
 BAM, een vcf en excel en per serie een PDF en excel. Snakemake
 bekijkt welke regels deze files als output beschrijven en zoekt dan naar de
 files die nodig zijn als input voor de gevonden regel(s). Indien deze files nog niet
@@ -45,4 +45,4 @@ bestaan zoekt snakemake een regel met (een van deze) files als output. Dit gaat
 zo door totdat snakemake een regel vindt waarvoor de inputfiles aanwezig zijn
 en vanaf die regel gaat de workflow van start.
 
-![SnakeGraph](img/amcpipeline.png)
+![SnakeGraph](diagnostiek/docs/pipeline.png)

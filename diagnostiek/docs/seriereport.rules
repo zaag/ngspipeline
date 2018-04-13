@@ -263,7 +263,7 @@ rule seriereport:
             row1 += 1
 
         if len(taqmanerror) > 0:
-            ws1.write(row1, 0, 'De volgende patienten hebben awfijkende TaqMan calls: {}'.format(' '.join(taqmanerror)))
+            ws1.write(row1, 0, 'De volgende patienten hebben afwijkende TaqMan calls: {}'.format(' '.join(taqmanerror)))
             row1 += 1
 
 

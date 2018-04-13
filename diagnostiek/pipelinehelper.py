@@ -179,6 +179,8 @@ def parse_taqman(taqmanfile):
             rs, call = line
             if rs.endswith(')'):
                 rs = rs.split(' ')[0]
+            else:
+                rs = rs.rsplit()[0]
             if call != 'WT' and call != 'HET' and call != 'HOM':
                 call = 'NoTaqMan'
             locus = rsid_to_locus[rs]
