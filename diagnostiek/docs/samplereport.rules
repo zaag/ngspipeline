@@ -81,6 +81,14 @@ def mean_doc(docfile):
     return(df.mean().round(0), df.std().round(0))
 
 
+def parse_moza_table(table):
+    with open(table, 'r') as f:
+        for line in f:
+            if not line:
+                continue
+            yield line
+
+
 rule samplereport:
     input:
         doc = rules.depthofcoverage.output[0],
@@ -91,7 +99,9 @@ rule samplereport:
         snpcheck = rules.duplicatesnpcheck.output.snpcomp,
         cnvdone = rules.cnvdetection.output,
         mosapng = rules.createmosaicoutput.output.png,
-        mosatable = rules.createmosaicoutput.output.table
+        mosalctable = rules.createmosaicoutput.output.lc,
+        mosavartable = rules.createmosaicoutput.output.var,
+        mosalitvartable = rules.createmosaicoutput.output.litvar
 
     output:
         "output/{sample}.xlsx"
@@ -319,5 +329,43 @@ rule samplereport:
                                         format=underlined, row=row5 + 4)
                 for line in f:
                     row5, col5 = write_list(line.split(), ws5, row=row5, orientation='cols')
+
+        if input_dict[wildcards.sample]['mozaiek']:
+            ws6 = wb.add_worksheet('Mozaiek')
+            ws7 = wb.add_worksheet('Mozaiek <500x')
+            ws6.set_column('A:A', 14)
+            ws7.set_column('A:A', 14)
+
+            ws6.insert_image('A1', input.mosapng,
+                             {'x_scale': 0.75, 'y_scale': 0.75})
+
+            row6, col6 = write_list([], ws6, formatheader=headerformat,
+                                    header='Mozaiek calls', orientation='cols',
+                                    format=underlined, row=35)
+
+            row6 -= 1
+
+            for line in parse_moza_table(input.mosavartable):
+                row6, col6 = write_list(line.split(), ws6, row=row6,
+                                        orientation='cols')
+
+            row6 += 2
+            row6, col6 = write_list([], ws6, formatheader=headerformat,
+                                    header='Bekende posities', orientation='cols',
+                                    format=underlined, row=row6)
+            row6 -= 1
+
+            for line in parse_moza_table(input.mosalitvartable):
+                row6, col6 = write_list(line.split(), ws6, row=row6,
+                                        orientation='cols')
+
+
+            row7 = 0
+            for line in parse_moza_table(input.mosalctable):
+                row7, col7 = write_list(line.split(), ws7, row=row7,
+                                        orientation='cols')
+
+
+
 
         wb.close()

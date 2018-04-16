@@ -407,3 +407,13 @@ def metrics2db(df, db, table):
     except sqlite3.OperationalError as e:
         print(e)
     conn.close()
+
+def get_known_mosaic_positions():
+    litvars = dict()
+    basedir = os.path.dirname(os.path.realpath(__file__))
+    with open(os.path.join(basedir, 'docs', 'solitvars.csv')) as f:
+        fin = csv.reader(f)
+        for line in fin:
+            locus, varbase, cposvarstring = line
+            litvars[locus] = varbase, cposvarstring
+    return litvars

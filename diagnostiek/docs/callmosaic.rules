@@ -24,23 +24,27 @@ rule addmosaicdata:
                                        wildcards.sample,
                                        input_dict[wildcards.sample]['pakkettarget'],
                                        SOMOSADB)
-            shell("touch {output}")
 
+            shell("touch {output}")
 
 
 rule createmosaicoutput:
     input:
-        expand(rules.addmosaicdata.output, sample=samples)
+        expand(rules.addmosaicdata.output,sample=samples),
+        doc=rules.depthofcoverage.output[0]
     output:
         png=temp("gatkfiles/{sample}.mosaic.png"),
-        lc=temp("gatkfiles/{sample}.mosaic.out.txt")
+        var=temp("gatkfiles/{sample}.mosaic.var.txt"),
+        litvar=temp("gatkfiles/{sample}.mosaic.litvar.txt"),
+        lc=temp("gatkfiles/{sample}.mosaic.lc.txt")
     message:
         "Plot mosaic data"
     log:
         "logfiles/{sample}.MosaPlot.log"
     run:
         if not input_dict[wildcards.sample]['mozaiek']:
-            shell("touch {output.png} && touch {output.table}")
+            for _ in output:
+                shell("touch {_}")
         elif input_dict[wildcards.sample]['mozaiek']:
             bases = 'A C G T I D'.split()
             sdata, adata = get_data_to_plot(wildcards.sample, SOMOSADB)
@@ -59,6 +63,23 @@ rule createmosaicoutput:
                     elif base == ref[locus]:
                         lcd[locus][base] = 0
 
+            with open(output.var, 'w') as f:
+                header = ['locus'] + bases
+                f.write('\t'.join(header))
+                f.write('\n')
+                for locus, data in sdata.items():
+                    f.write(locus)
+                    for base in bases:
+                        if base == 'I':
+                            f.write('\t{}'.format(data[base][1]))
+                            continue
+                        try:
+                            f.write('\t{}'.format(data[base]))
+                        except KeyError as e:
+                            f.write('\tREF')
+                    f.write('\n')
+
+
             with open(output.lc, 'w') as f:
                 header = 'locus\t{}\n'.format('\t'.join([base for base in bases]))
                 f.write(header)
@@ -67,3 +88,13 @@ rule createmosaicoutput:
                                     else '.' for base in bases ]
                     out = '{}\t{}\n'.format(locus, '\t'.join(percentages))
                     f.write(out)
+
+            litvars = get_known_mosaic_positions()
+            data = parse_doc_for_literature_vars(input.doc)
+
+            with open(output.litvar, 'w') as f:
+                for locus, varb_cpos in litvars.items():
+                    varbase, cpos = varb_cpos
+                    varperc  = getattr(data[locus], varbase)
+
+                    f.write('{}\t{}\t{}\n'.format(locus, cpos, varperc))
