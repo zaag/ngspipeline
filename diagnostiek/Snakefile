@@ -18,17 +18,12 @@ import matplotlib
 import numpy as np
 import pandas as pd
 
-sys.path.append('/home/mahaagmans/Documents/ngsscriptlibrary')
-sys.path.append('/data/dnadiag/ngsscriptlibrary')
-
 from ngsscriptlibrary.parsing import *
 
 from ngsscriptlibrary import sample_in_db
 from ngsscriptlibrary import metrics2db
 from ngsscriptlibrary import perc_target_covered2db
 from ngsscriptlibrary import summary2db
-
-from pipelinehelper import *
 
 matplotlib.use('Agg')
 

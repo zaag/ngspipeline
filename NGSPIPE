@@ -58,9 +58,6 @@ if __name__ == '__main__':
     import argparse
     import subprocess
 
-    sys.path.append('/home/mahaagmans/Documents/ngsscriptlibrary')
-    sys.path.append('/data/dnadiag/ngsscriptlibrary')
-
     from ngsscriptlibrary import samplesheet_to_sample_genesis
 
     parser = argparse.ArgumentParser()
