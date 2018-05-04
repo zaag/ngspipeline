@@ -1,56 +1,8 @@
 #!/usr/bin/env python
 
-def get_arguments():
-    """Parse arguments and return Namespace object."""
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-s", "--serie", type=str,
-                        help="Miseq serie nummer", required=True)
-    parser.add_argument("-t", "--threads", type=int, default=10,
-                        help="Number of threads for snakemake")
-    parser.add_argument("-p", "--pipeline", action='store_true',
-                        help="Only run the pipeline")
-    parser.add_argument("-r", "--rule", default='END',
-                        help="Ask snakemake to run specific rule")
-    parser.add_argument("--download", action='store_true',
-                        help="Download reads from basespace")
-    parser.add_argument("--cleanup", action='store_true',
-                        help="Move data to archive")
-    parser.add_argument("--hester", action='store_true',
-                        help="Run is rehybed @ MiSeq")
-    args = parser.parse_args()
-    return args
-
-
-def get_header(samplesheet):
-    "Read samplesheet and find line with Sample_ID. Return integer."
-    with open(samplesheet, 'r') as f:
-        for i, line in enumerate(f):
-            if line.startswith('Sample_ID'):
-                return i
-
-
-def parse_samplesheet(samplesheet):
-    """Read samplesheet part with sample info. Use ngsscriptlibrary to get
-    targets to use and analyses to perform. Return dict.
-    """
-    samples = list()
-    with open(samplesheet) as f:
-        reader = csv.reader(f)
-        for i, line in enumerate(reader):
-            if i > get_header(samplesheet):
-                samples.append(line)
-    sample_genesis = list()
-    for line in samples:
-        sample = line[0]
-        genesis = line[-1]
-        genesis = genesis.replace('.NGS', '')
-        sample_genesis.append((sample, genesis))
-    return sample_genesis
-
-
 def run_command(command):
     subprocess.call(command, shell=True, stderr=subprocess.STDOUT)
+
 
 def create_dir(dir_to_create):
     try:
@@ -99,14 +51,36 @@ def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie):
 
 
 if __name__ == '__main__':
-    import argparse
     import os
-    import shutil
-    import subprocess
-    import glob
     import csv
+    import glob
+    import shutil
+    import argparse
+    import subprocess
 
-    args = get_arguments()
+    sys.path.append('/home/mahaagmans/Documents/ngsscriptlibrary')
+    sys.path.append('/data/dnadiag/ngsscriptlibrary')
+
+    from ngsscriptlibrary import samplesheet_to_sample_genesis
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-s", "--serie", type=str,
+                        help="Miseq serie nummer", required=True)
+    parser.add_argument("-t", "--threads", type=int, default=10,
+                        help="Number of threads for snakemake")
+    parser.add_argument("-p", "--pipeline", action='store_true',
+                        help="Only run the pipeline")
+    parser.add_argument("-r", "--rule", default='END',
+                        help="Ask snakemake to run specific rule")
+    parser.add_argument("--download", action='store_true',
+                        help="Download reads from basespace")
+    parser.add_argument("--cleanup", action='store_true',
+                        help="Move data to archive")
+    parser.add_argument("--hester", action='store_true',
+                        help="Run is rehybed @ MiSeq")
+
+    args = parser.parse_args()
+
     serie = args.serie
     threads = args.threads
     rule = args.rule
@@ -153,17 +127,16 @@ if __name__ == '__main__':
         run_command('cp -r {} {}'.format(SNPCHECKDIR, READS))
 
     if args.pipeline:
-        samples = [_[0] for _ in parse_samplesheet('{}/SampleSheet.csv'.format(READS))]
+        samples = [_[0] for _ in samplesheet_to_sample_genesis('{}/SampleSheet.csv'.format(READS))]
         for sample in samples:
             snpcheckfile = os.path.join(READS, 'SNPcheck', '{}.qpcrsnpcheck'.format(sample))
             if not os.path.isfile(snpcheckfile):
                 run_command('touch {}'.format(snpcheckfile))
 
-
         run_command('snakemake -s {}/diagnostiek/Snakefile -j{} --configfile {} --directory {} -R {}'.format(SCRIPTHOME, threads, CONFIG, READS, rule))
 
     if args.cleanup:
-        samples = parse_samplesheet('{}/SampleSheet.csv'.format(READS))
+        samples = samplesheet_to_sample_genesis('{}/SampleSheet.csv'.format(READS))
         move_data_to_diagnostic_tree(samples, OUTPUTDIR, READS, serie)
         try:
             os.mkdir('{}/MiSeq/Diagnostiek/MS{}'.format(ARCHIEF, serie))

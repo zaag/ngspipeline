@@ -21,7 +21,13 @@ import pandas as pd
 sys.path.append('/home/mahaagmans/Documents/ngsscriptlibrary')
 sys.path.append('/data/dnadiag/ngsscriptlibrary')
 
-from ngsscriptlibrary import TargetDatabase
+from ngsscriptlibrary.parsing import *
+
+from ngsscriptlibrary import sample_in_db
+from ngsscriptlibrary import metrics2db
+from ngsscriptlibrary import perc_target_covered2db
+from ngsscriptlibrary import summary2db
+
 from pipelinehelper import *
 
 matplotlib.use('Agg')
@@ -43,8 +49,81 @@ SOMOSADB = os.path.join(DBREPO, 'SO.mosaic.sqlite')
 SNPCHECK = os.path.join(TARGETREPO, 'varia', 'NGS-SNPcheck.vcf')
 samplesheet = 'SampleSheet.csv'
 
+
+def get_file_locations(todo, targetrepo):
+    """Read dict with targets and analyses and add correct file locations.
+    Return dict
+    """
+    for s in todo.keys():
+        picard = '{}_target.interval_list'.format(todo[s]['capture'])
+        picard = os.path.join(targetrepo, 'captures', picard)
+
+        cnvtarget = '{}_target.bed'.format(todo[s]['capture'])
+        cnvtarget = os.path.join(targetrepo, 'captures', cnvtarget)
+
+        annot = '{}_target.annotated'.format(todo[s]['capture'])
+        annot = os.path.join(targetrepo, 'captures', annot)
+
+        cap_is_pakket = todo[s]['capispakket']
+
+        if cap_is_pakket:
+            varcal = '{}_generegions.bed'.format(todo[s]['capture'])
+            varcal = os.path.join(targetrepo, 'captures', varcal)
+            sanger = '{}_target.bed'.format(todo[s]['capture'])
+            sanger = os.path.join(targetrepo, 'captures', sanger)
+            pakket = '{}_target.bed'.format(todo[s]['capture'])
+            pakket = os.path.join(targetrepo, 'captures', pakket)
+        elif not cap_is_pakket:
+            varcal = '{}_generegions.bed'.format(todo[s]['pakket'])
+            varcal = os.path.join(targetrepo, 'pakketten', varcal)
+            sanger = '{}_target.bed'.format(todo[s]['pakket'])
+            sanger = os.path.join(targetrepo, 'pakketten', sanger)
+            pakket = '{}_target.bed'.format(todo[s]['pakket'])
+            pakket = os.path.join(targetrepo, 'pakketten', pakket)
+
+        if todo[s]['panel'] is not None:
+            sanger = '{}_target.bed'.format(todo[s]['panel'])
+            sanger = os.path.join(targetrepo, 'panels', sanger)
+
+        todo[s]['annot'] = annot
+        todo[s]['picard'] = picard
+        todo[s]['cnvtarget'] = cnvtarget
+        todo[s]['pakkettarget'] = pakket
+        todo[s]['varcal'] = varcal
+        todo[s]['sanger'] = sanger
+
+    return todo
+
+
+def get_pakketten(todo):
+    pakketten = list()
+    for s in todo.keys():
+        pakket = todo[s]['pakket']
+        if pakket not in pakketten:
+            pakketten.append(pakket)
+    return pakketten
+
+
+def get_captures(todo):
+    captures = list()
+    for s in todo.keys():
+        capture = todo[s]['capture']
+        if capture not in captures:
+            captures.append(capture)
+    return captures
+
+
+def create_recalinput_file(samples):
+    """Create a file with a list of BAM-files (1 per sample) to use as input
+    for the recalibration step in the pipeline.
+    """
+    with open('recalinput.list', 'w') as f:
+        for sample in samples:
+            f.write('output/{}.DM.bam\n'.format(sample))
+
+
 # Get todo list for samples
-input_dict = parse_samplesheet(samplesheet, TARGETDB)
+input_dict = parse_samplesheet_for_pipeline(samplesheet, TARGETDB)
 input_dict = get_file_locations(input_dict, TARGETREPO)
 captures = get_captures(input_dict)
 pakketten = get_pakketten(input_dict)
@@ -480,7 +559,7 @@ rule addcnvdata:
     run:
         if input_dict[wildcards.sample]['cnvscreening']:
             target = input_dict[wildcards.sample]['capture']
-            shell("{pyCNV} --todo analyze -c {target} -s {serie} -n {input} --sample {wildcards.sample} --addonly > {log} 2>&1")
+            shell("{pyCNV} --analyse -c {target} -s {serie} -n {input} --sample {wildcards.sample} --addonly > {log} 2>&1")
             shell("touch {output}")
         else:
             shell("touch {output}")
@@ -504,8 +583,9 @@ rule cnvdetection:
                     screening = input_dict[s]['cnvscreening']
             if screening:
                 os.makedirs(workdir, exist_ok=True)
-                shell("{pyCNV} --todo analyze -c {capture} -s {serie} -o {workdir} > {log} 2>&1")
+                shell("{pyCNV} --analyse -c {capture} -s {serie} -o {workdir} > {log} 2>&1")
         shell("touch {output}")
+
 
 include:
     'docs/callmosaic.rules'

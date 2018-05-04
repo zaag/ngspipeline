@@ -3,6 +3,18 @@ __license__ = "MIT"
 
 from ngsscriptlibrary.mosaic import *
 
+
+def get_known_mosaic_positions():
+    litvars = dict()
+    basedir = os.path.dirname(os.path.realpath(__file__))
+    with open(os.path.join(basedir, 'docs', 'so_literature_vars.csv')) as f:
+        fin = csv.reader(f)
+        for line in fin:
+            locus, varbase, cposvarstring = line
+            litvars[locus] = varbase, cposvarstring
+    return litvars
+
+
 rule addmosaicdata:
     input:
         docfile=rules.depthofcoverage.output[0],
