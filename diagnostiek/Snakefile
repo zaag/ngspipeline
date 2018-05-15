@@ -41,7 +41,7 @@ pyCNV = config['pyCNV']
 # Define files
 TARGETDB = os.path.join(TARGETREPO, 'varia', 'captures.sqlite')
 METRICSDB = os.path.join(DBREPO, 'metrics.sqlite')
-SAMPLEDB = os.path.join(DBREPO, 'samplesheet.sqlite')
+SAMPLEDB = os.path.join(DBREPO, 'samplesheets.sqlite')
 SOMOSADB = os.path.join(DBREPO, 'SO.mosaic.sqlite')
 SNPCHECK = os.path.join(TARGETREPO, 'varia', 'NGS-SNPcheck.vcf')
 samplesheet = 'SampleSheet.csv'
