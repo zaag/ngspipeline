@@ -127,8 +127,6 @@ pakketten = get_pakketten(input_dict)
 samples = input_dict.keys()
 serie = [input_dict[_]['serie'] for _ in input_dict.keys()][0]
 
-for s in samples:
-
 
 # Rules for snakemake
 onsuccess:
