@@ -24,6 +24,7 @@ from ngsscriptlibrary import sample_in_db
 from ngsscriptlibrary import metrics2db
 from ngsscriptlibrary import perc_target_covered2db
 from ngsscriptlibrary import summary2db
+from ngsscriptlibrary import samplesheetinfo2db
 
 matplotlib.use('Agg')
 
@@ -40,6 +41,7 @@ pyCNV = config['pyCNV']
 # Define files
 TARGETDB = os.path.join(TARGETREPO, 'varia', 'captures.sqlite')
 METRICSDB = os.path.join(DBREPO, 'metrics.sqlite')
+SAMPLEDB = os.path.join(DBREPO, 'samplesheet.sqlite')
 SOMOSADB = os.path.join(DBREPO, 'SO.mosaic.sqlite')
 SNPCHECK = os.path.join(TARGETREPO, 'varia', 'NGS-SNPcheck.vcf')
 samplesheet = 'SampleSheet.csv'
@@ -125,6 +127,8 @@ pakketten = get_pakketten(input_dict)
 samples = input_dict.keys()
 serie = [input_dict[_]['serie'] for _ in input_dict.keys()][0]
 
+for s in samples:
+
 
 # Rules for snakemake
 onsuccess:
@@ -142,6 +146,7 @@ rule prepare:
         expand("reads/{sample}.R2.fastq.gz", sample=samples)
     run:
         for sample in samples:
+            samplesheetinfo2db(input_dict[sample], sample, SAMPLEDB)
             R1 = glob.glob('{s}*R1*.gz'.format(s=sample))
             R2 = glob.glob('{s}*R2*.gz'.format(s=sample))
             if R1 and R2:
