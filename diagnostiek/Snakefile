@@ -349,7 +349,7 @@ rule getsangers:
             if sangercount == 0:
                 sangers_for_db = 'Geen sangers: alles callable'
             sangers2db(sangers_for_db, wildcards.sample, serie, SANGERDB)
-        shell("touch {output.sangers}")
+        shell("touch {output.sangers} {output.tempbed}")
 
 
 rule depthofcoverage:
