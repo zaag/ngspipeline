@@ -25,6 +25,7 @@ from ngsscriptlibrary import metrics2db
 from ngsscriptlibrary import perc_target_covered2db
 from ngsscriptlibrary import summary2db
 from ngsscriptlibrary import samplesheetinfo2db
+from ngsscriptlibrary import sangers2db
 
 matplotlib.use('Agg')
 
