@@ -111,10 +111,10 @@ rule samplereport:
         db = '{}/metrics.sqlite'.format(config['DB'])
         wb = xlsxwriter.Workbook(output[0])
         wb.set_properties({
-        'title':    wildcards.sample,
-        'subject':  'MiSEQUENCING',
-        'author':   'Martin Haagmans',
-        'comments': 'Created with Python and XlsxWriter'})
+            'title':    wildcards.sample,
+            'subject':  'MiSEQUENCING',
+            'author':   'Martin Haagmans',
+            'comments': 'Created with Python and XlsxWriter'})
         ws1 = wb.add_worksheet('patient + Miseq info')
         ws2 = wb.add_worksheet('low coverage')
         ws3 = wb.add_worksheet('varianten')
@@ -176,7 +176,9 @@ rule samplereport:
         VARS2 = ['Paraaf analist.', 'Gen', 'cDNA.', 'gDNA', 'Eiwitverandering',
                  'Exon', 'Chromosoom', 'NM-nummer (RefSeq)',
                  'Genoom versie', 'Pos.Controle1', 'Pos.Controle2',
-                 'Vermelden MLPA kitnr / DL' ]
+                 'Vermelden MLPA kitnr / DL']
+
+        VARS3 = ['Score', 'Over', 'Score', 'Paraaf staf']
 
         SANGER = ['Gen', 'Chr.', 'g.Start', 'g.Eind', 'Resultaat',
                   'Paraaf analist', 'Paraaf staf']
@@ -235,8 +237,8 @@ rule samplereport:
                     row2, col2 = write_list(out[:4], ws2, row=row2, col=0,
                                             orientation='cols')
 
-        ws3.write(3,11, 'Paraaf', underlined)
-        ws3.write(4,10, 'Eerste beoordeling: ')
+        ws3.write(3, 11, 'Paraaf', underlined)
+        ws3.write(4, 10, 'Eerste beoordeling: ')
 
         row3, col3 = write_list(VARS, ws3, formatheader=headerformat,
                                 header='VARIANTEN IN BRIEF',
@@ -246,10 +248,14 @@ rule samplereport:
                                 header='GENESIS NOTATIE', row=row3 + 12,
                                 orientation='cols', format=underlined)
 
+        row3, col3 = write_list(VARS3, ws3, formatheader=headerformat,
+                                header='CNV', row=row3 + 2,
+                                orientation='cols', format=underlined)
+
         for _ in range(12):
             connaisseur_row = int(_) + 4
             connaisseur = '''="chr" & SUBSTITUTE(LOWER(LEFT(A{r},SEARCH("(",A{r},1)-1)), "chr", "") & ":" & MID(A{r}, SEARCH(".",A{r}) + 1,SEARCH(">",A{r}) -  SEARCH(".",A{r}) -2)'''.format(r=connaisseur_row)
-            ws3.write(connaisseur_row -1, 7, connaisseur)
+            ws3.write(connaisseur_row - 1, 7, connaisseur)
             row = row3 - 13
             gennaam = '''=MID(B{r}, SEARCH("(",B{r},1) + 1,( SEARCH(")",B{r},1) -1 - SEARCH("(",B{r},1) ))'''.format(r=row)
             cnotatie = '''=RIGHT(B{r}, LEN(B{r}) - SEARCH(":",B{r},1))'''.format(r=row)

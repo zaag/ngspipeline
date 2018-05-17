@@ -42,6 +42,7 @@ pyCNV = config['pyCNV']
 TARGETDB = os.path.join(TARGETREPO, 'varia', 'captures.sqlite')
 METRICSDB = os.path.join(DBREPO, 'metrics.sqlite')
 SAMPLEDB = os.path.join(DBREPO, 'samplesheets.sqlite')
+SANGERDB = os.path.join(DBREPO, 'sangerfragmenten.sqlite')
 SOMOSADB = os.path.join(DBREPO, 'SO.mosaic.sqlite')
 SNPCHECK = os.path.join(TARGETREPO, 'varia', 'NGS-SNPcheck.vcf')
 samplesheet = 'SampleSheet.csv'
@@ -299,19 +300,21 @@ rule callableloci:
     log:
         "logfiles/{sample}.CallableLoci.log"
     run:
-        target = input_dict[wildcards.sample]['sanger']
-
-        shell('''{JAVA} -jar {GATK} -R {REF} -T CallableLoci \
-        -minDepth 30 -mdflmq 30 -mmq 20 -frlmq 0.6 -mlmq 10 \
-        -I {input.bam} -o {output.bed} \
-        -summary {output.summary}  \
-        -L {target} --BQSR {input.table} > {log} 2>&1''')
-        if input_dict[wildcards.sample]['panel'] is None:
-            db_targetname = input_dict[wildcards.sample]['pakket']
+        if sample_in_db(wildcards.sample, serie, METRICSDB, 'callable'):
+            shell('touch {output.summary} {output.bed}')
         else:
-            db_targetname = input_dict[wildcards.sample]['panel']
-        summary2db(wildcards.sample, read_summary(output.summary),
-                   db_targetname, serie, METRICSDB)
+            target = input_dict[wildcards.sample]['sanger']
+            shell('''{JAVA} -jar {GATK} -R {REF} -T CallableLoci \
+            -minDepth 30 -mdflmq 30 -mmq 20 -frlmq 0.6 -mlmq 10 \
+            -I {input.bam} -o {output.bed} \
+            -summary {output.summary}  \
+            -L {target} --BQSR {input.table} > {log} 2>&1''')
+            if input_dict[wildcards.sample]['panel'] is None:
+                db_targetname = input_dict[wildcards.sample]['pakket']
+            else:
+                db_targetname = input_dict[wildcards.sample]['panel']
+            summary2db(wildcards.sample, read_summary(output.summary),
+                       db_targetname, serie, METRICSDB)
 
 
 rule getsangers:
@@ -319,32 +322,31 @@ rule getsangers:
         rules.callableloci.output.bed
     output:
         sangers = temp("gatkfiles/{sample}.sangers.txt"),
-        tempbed = temp("gatkfiles/{sample}.tmp.bed")
-
     message:
         "Defining sangerfragments from callable regions"
-
     run:
         annot_bed = input_dict[wildcards.sample]['annot']
         panel = input_dict[wildcards.sample]['panel']
-        if panel is not None and 'OVR' in panel:
-            with open(output.sangers, 'w') as f:
-                f.write('Geen sangers: OVR panel')
-            shell("touch {output.tempbed}")
+        sangers_for_db = list()
+        if sample_in_db(wildcards.sample, serie, SANGERDB, 'sangers'):
+            pass
+        elif panel is not None and 'OVR' in panel:
+            sangers_for_db = 'Geen sangers: OVR panel'
+            sangers2db(sangers_for_db, wildcards.sample, serie, SANGERDB)
         else:
             df = annotate_callables(input, annot_bed, output.tempbed)
             sangercount = 0
-            with open(output.sangers, 'w') as f:
-                for target, data in df.groupby(df.index):
-                    if len(data[data['callable'] != 'CALLABLE']) > 0:
-                        sangercount += 1
-                        gene = ' '.join(data['gene'].unique())
-                        start = data[data['callable'] != 'CALLABLE']['regionstart'].min()
-                        end = data[data['callable'] != 'CALLABLE']['regionend'].max()
-                        f.write('{}\t{}\t{}\t{}\t{}\t{}\n'.format(
-                            gene, target[0], start, end, target[1], target[2]))
-                if sangercount == 0:
-                    f.write('Geen sangers: alles callable')
+            for target, data in df.groupby(df.index):
+                if len(data[data['callable'] != 'CALLABLE']) > 0:
+                    sangercount += 1
+                    gene = ' '.join(data['gene'].unique())
+                    start = data[data['callable'] != 'CALLABLE']['regionstart'].min()
+                    end = data[data['callable'] != 'CALLABLE']['regionend'].max()
+                    sangers_for_db.append((gene, target[0], start, end, target[1], target[2]))
+            if sangercount == 0:
+                sangers_for_db = 'Geen sangers: alles callable'
+            sangers2db(sangers_for_db, wildcards.sample, serie, SANGERDB)
+        shell("touch {output.sangers}")
 
 
 rule depthofcoverage:
