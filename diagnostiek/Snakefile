@@ -344,7 +344,8 @@ rule getsangers:
                     gene = ' '.join(data['gene'].unique())
                     start = data[data['callable'] != 'CALLABLE']['regionstart'].min()
                     end = data[data['callable'] != 'CALLABLE']['regionend'].max()
-                    sangers_for_db.append((gene, target[0], start, end, target[1], target[2]))
+                    sangers_for_db.append((gene, target[0], str(start), str(end),
+                                           str(target[1]), str(target[2])))
             if sangercount == 0:
                 sangers_for_db = 'Geen sangers: alles callable'
             sangers2db(sangers_for_db, wildcards.sample, serie, SANGERDB)
