@@ -247,7 +247,7 @@ rule samplereport:
                                 header='GENESIS NOTATIE', row=row3 + 12,
                                 orientation='cols', format=underlined)
 
-        row3, col3 = write_list(VARS3, ws3, formatheader=headerformat,
+        row3, col3 = write_list(VARS4, ws3, formatheader=headerformat,
                                 header='CNV', row=row3 + 2,
                                 orientation='cols', format=underlined)
 
@@ -268,10 +268,6 @@ rule samplereport:
             row3, col3 = write_list(VARS3, ws3, formatheader=headerformat,
                                     header=False, row=row3,
                                     orientation='cols')
-
-        row3, col3 = write_list(VARS4, ws3, formatheader=headerformat,
-                                header=False, row=row3,
-                                orientation='cols')
 
         ws3.data_validation(row3, 2, row3+3, 2,
                             {'validate': 'list',
