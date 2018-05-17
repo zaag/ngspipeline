@@ -322,6 +322,7 @@ rule getsangers:
         rules.callableloci.output.bed
     output:
         sangers = temp("gatkfiles/{sample}.sangers.txt"),
+        tempbed = temp("gatkfiles/{sample}.tmp.bed")
     message:
         "Defining sangerfragments from callable regions"
     run:

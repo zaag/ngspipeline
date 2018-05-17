@@ -142,7 +142,6 @@ rule samplereport:
         ws3.set_column('K:K', 13)
         ws3.set_column('L:L', 25)
 
-
         MISEQ = ['NGS DNA nummer:', 'Sanger DNA nummer:', 'Familienummer:',
                  'Geboortedatum:', 'Geslacht:', 'Diagnose:', 'Samenvatting:']
 
@@ -264,12 +263,16 @@ rule samplereport:
             chromosoom = '''=SUBSTITUTE(LOWER(LEFT(A{r},SEARCH("(",A{r},1)-1)), "chr", "")'''.format(r=row)
             nmnummer = '''=LEFT(B{r},SEARCH("(",B{r},1)-1)'''.format(r=row)
 
-            VARS3 = ['', gennaam, cnotatie, gnotatie, pnotatie,  '', chromosoom,
-                     nmnummer, 'GRCh37', wildcards.sample]
+        VARS3 = ['', gennaam, cnotatie, gnotatie, pnotatie,  '', chromosoom,
+                 nmnummer, 'GRCh37', wildcards.sample]
 
-            row3, col3 = write_list(VARS3, ws3, formatheader=headerformat,
-                                    header=False, row=row3,
-                                    orientation='cols')
+        row3, col3 = write_list(VARS3, ws3, formatheader=headerformat,
+                                header=False, row=row3,
+                                orientation='cols')
+
+        ws3.data_validation(row3, 2, row3+3, 2,
+                            {'validate': 'list',
+                             'source': ['WT', 'NVT', 'AFW', 'NTS']})
 
         capture = input_dict[wildcards.sample]['capture']
         if input_dict[wildcards.sample]['cnvdiagnostiek']:
@@ -298,12 +301,9 @@ rule samplereport:
                                          'Paraaf staf voor gezien: '], ws4)
                 ws4.set_column('A:A', 35)
 
-
-
-
             elif os.path.isfile(cnv_calls):
-                ws4.write(1,10, 'Paraaf', underlined)
-                ws4.write(2,9, 'Eerste beoordeling: ')
+                ws4.write(1, 10, 'Paraaf', underlined)
+                ws4.write(2, 9, 'Eerste beoordeling: ')
                 with open(cnv_calls, 'r') as f:
                     header = next(f)
                     header = list(header.split())
@@ -316,8 +316,6 @@ rule samplereport:
 
                     for line in f:
                         row4, col4 = write_list(line.split(), ws4, row=row4, orientation='cols')
-
-
 
             with open(cnv_excluded, 'r') as f:
                 header = next(f)
@@ -365,13 +363,9 @@ rule samplereport:
                 row6, col6 = write_list(line.split(), ws6, row=row6,
                                         orientation='cols')
 
-
             row7 = 0
             for line in parse_moza_table(input.mosalctable):
                 row7, col7 = write_list(line.split(), ws7, row=row7,
                                         orientation='cols')
-
-
-
 
         wb.close()
