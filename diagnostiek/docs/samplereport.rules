@@ -177,7 +177,7 @@ rule samplereport:
                  'Genoom versie', 'Pos.Controle1', 'Pos.Controle2',
                  'Vermelden MLPA kitnr / DL']
 
-        VARS3 = ['Score', 'Over', 'Score', 'Paraaf staf']
+        VARS4 = ['Score', 'Over', 'Score', 'Paraaf staf']
 
         SANGER = ['Gen', 'Chr.', 'g.Start', 'g.Eind', 'Resultaat',
                   'Paraaf analist', 'Paraaf staf']
@@ -262,11 +262,14 @@ rule samplereport:
             pnotatie = '''=C{r}'''.format(r=row)
             chromosoom = '''=SUBSTITUTE(LOWER(LEFT(A{r},SEARCH("(",A{r},1)-1)), "chr", "")'''.format(r=row)
             nmnummer = '''=LEFT(B{r},SEARCH("(",B{r},1)-1)'''.format(r=row)
+            VARS3 = ['', gennaam, cnotatie, gnotatie, pnotatie,  '', chromosoom,
+                     nmnummer, 'GRCh37', wildcards.sample]
 
-        VARS3 = ['', gennaam, cnotatie, gnotatie, pnotatie,  '', chromosoom,
-                 nmnummer, 'GRCh37', wildcards.sample]
+            row3, col3 = write_list(VARS3, ws3, formatheader=headerformat,
+                                    header=False, row=row3,
+                                    orientation='cols')
 
-        row3, col3 = write_list(VARS3, ws3, formatheader=headerformat,
+        row3, col3 = write_list(VARS4, ws3, formatheader=headerformat,
                                 header=False, row=row3,
                                 orientation='cols')
 
