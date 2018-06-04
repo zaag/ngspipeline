@@ -329,12 +329,16 @@ rule getsangers:
     run:
         annot_bed = input_dict[wildcards.sample]['annot']
         panel = input_dict[wildcards.sample]['panel']
+        if panel is None:
+            target_name = input_dict[wildcards.sample]['pakket']
+        elif panel is not None:
+            target_name = panel
         sangers_for_db = list()
         if sample_in_db(wildcards.sample, serie, SANGERDB, 'sangers'):
             pass
         elif panel is not None and 'OVR' in panel:
             sangers_for_db = 'Geen sangers: OVR panel'
-            sangers2db(sangers_for_db, wildcards.sample, serie, SANGERDB)
+            sangers2db(sangers_for_db, wildcards.sample, serie, target_name, SANGERDB)
         else:
             df = annotate_callables(input, annot_bed, output.tempbed)
             sangercount = 0
@@ -348,7 +352,7 @@ rule getsangers:
                                            str(target[1]), str(target[2])))
             if sangercount == 0:
                 sangers_for_db = 'Geen sangers: alles callable'
-            sangers2db(sangers_for_db, wildcards.sample, serie, SANGERDB)
+            sangers2db(sangers_for_db, wildcards.sample, serie, target_name, SANGERDB)
         shell("touch {output.sangers} {output.tempbed}")
 
 

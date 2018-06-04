@@ -63,43 +63,6 @@ def get_perc_target_covered(dnr, target, serie, db=None):
     return c.fetchone()[0]
 
 
-def get_picard_for_report(dnr, db=None):
-    if db is None:
-        db = METRICSDB
-    conn = sqlite3.connect(db)
-    c = conn.cursor()
-    alignsqlr1 = """SELECT DISTINCT round(MEAN_READ_LENGTH, 1)
-                 FROM alignment
-                 WHERE (SAMPLE='{}'
-                 AND CATEGORY='FIRST_OF_PAIR')
-                 """.format(dnr)
-
-    alignsqlr2 = """SELECT DISTINCT round(MEAN_READ_LENGTH, 1)
-                 FROM alignment
-                 WHERE (SAMPLE='{}'
-                 AND CATEGORY='SECOND_OF_PAIR')
-                 """.format(dnr)
-
-    hssql = """SELECT DISTINCT
-            round(PCT_PF_UQ_READS*100),
-            round(PCT_SELECTED_BASES*100),
-            round(MEAN_TARGET_COVERAGE)
-            FROM hsmetrics WHERE (SAMPLE='{}'
-            AND SERIE='{}')
-            """.format(dnr, serie)
-
-    c.execute(alignsqlr1)
-    readlength1 = [val for tup in c.fetchall() for val in tup]
-
-    c.execute(alignsqlr2)
-    readlength2 = [val for tup in c.fetchall() for val in tup]
-
-    c.execute(hssql)
-    hsmetrics = [val for tup in c.fetchall() for val in tup]
-    conn.close()
-    return readlength1 + readlength2 + hsmetrics
-
-
 def read_sangerfile(f):
     sample, extension = os.path.splitext(os.path.split(f)[1])
     df = pd.read_csv(f, sep='\t', header=None)
@@ -127,10 +90,10 @@ rule seriereport:
         writer = pd.ExcelWriter(output[0], engine='xlsxwriter')
         wb = writer.book
         wb.set_properties({
-        'title':    serie,
-        'subject':  'MiSEQUENCING',
-        'author':   'Martin Haagmans',
-        'comments': 'Created with Python and XlsxWriter'})
+            'title': serie,
+            'subject': 'MiSEQUENCING',
+            'author': 'Martin Haagmans',
+            'comments': 'Created with Python and XlsxWriter'})
         ws1 = wb.add_worksheet('Metrics')
 
         headerformat = wb.add_format()
@@ -146,16 +109,18 @@ rule seriereport:
                                 orientation='cols')
 
         for dnr in samples:
+            MR = MetricsDBReader(db, dnr, serie, input_dict[dnr]['capture'])
             pakket = input_dict[dnr]['pakket']
             panel = input_dict[dnr]['panel']
             if input_dict[dnr]['panel'] is None:
                 perctargetcovered = 'nvt'
             elif input_dict[dnr]['panel'] is not None:
-                perctargetcovered = get_perc_target_covered(dnr, pakket, serie)
+                perctargetcovered = MR.get_perc_target_covered(input_dict[dnr]['panel'])
 
-            row1, col1 = write_list([dnr, pakket, panel] +
-                                    get_picard_for_report(dnr) +
-                                    [perctargetcovered],
+            picard_data = MR.get_alignmetrics() + MR.get_hsmetrics()
+            row1, col1 = write_list([dnr, pakket, panel]
+                                    + picard_data
+                                    + [perctargetcovered],
                                     ws1, row=row1, orientation='cols')
 
         dflist = list()
