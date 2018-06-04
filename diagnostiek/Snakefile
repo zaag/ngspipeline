@@ -41,11 +41,10 @@ pyCNV = config['pyCNV']
 
 # Define files
 TARGETDB = os.path.join(TARGETREPO, 'varia', 'captures.sqlite')
-METRICSDB = os.path.join(DBREPO, 'metrics.sqlite')
-SAMPLEDB = os.path.join(DBREPO, 'samplesheets.sqlite')
-SANGERDB = os.path.join(DBREPO, 'sangerfragmenten.sqlite')
-SOMOSADB = os.path.join(DBREPO, 'SO.mosaic.sqlite')
 SNPCHECK = os.path.join(TARGETREPO, 'varia', 'NGS-SNPcheck.vcf')
+METRICSDB = os.path.join(DBREPO, 'metrics.sqlite')
+SOMOSADB = os.path.join(DBREPO, 'SO.mosaic.sqlite')
+
 samplesheet = 'SampleSheet.csv'
 
 
@@ -146,7 +145,7 @@ rule prepare:
         expand("reads/{sample}.R2.fastq.gz", sample=samples)
     run:
         for sample in samples:
-            samplesheetinfo2db(input_dict[sample], sample, SAMPLEDB)
+            samplesheetinfo2db(input_dict[sample], sample, METRICSDB)
             R1 = glob.glob('{s}*R1*.gz'.format(s=sample))
             R2 = glob.glob('{s}*R2*.gz'.format(s=sample))
             if R1 and R2:
@@ -334,11 +333,11 @@ rule getsangers:
         elif panel is not None:
             target_name = panel
         sangers_for_db = list()
-        if sample_in_db(wildcards.sample, serie, SANGERDB, 'sangers'):
+        if sample_in_db(wildcards.sample, serie, METRICSDB, 'sangers'):
             pass
         elif panel is not None and 'OVR' in panel:
             sangers_for_db = 'Geen sangers: OVR panel'
-            sangers2db(sangers_for_db, wildcards.sample, serie, target_name, SANGERDB)
+            sangers2db(sangers_for_db, wildcards.sample, serie, target_name, METRICSDB)
         else:
             df = annotate_callables(input, annot_bed, output.tempbed)
             sangercount = 0
@@ -352,7 +351,7 @@ rule getsangers:
                                            str(target[1]), str(target[2])))
             if sangercount == 0:
                 sangers_for_db = 'Geen sangers: alles callable'
-            sangers2db(sangers_for_db, wildcards.sample, serie, target_name, SANGERDB)
+            sangers2db(sangers_for_db, wildcards.sample, serie, target_name, METRICSDB)
         shell("touch {output.sangers} {output.tempbed}")
 
 
