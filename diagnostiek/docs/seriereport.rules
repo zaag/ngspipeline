@@ -22,47 +22,6 @@ def write_list(listname, worksheet, row=0, col=0, skip=1, header=False,
     return (row, col)
 
 
-def get_callable_for_report(dnr, target, db=None):
-    if db is None:
-        db = METRICSDB
-    conn = sqlite3.connect(db)
-    c = conn.cursor()
-
-    total_sql = """SELECT REF_N, CALLABLE,
-    NO_COVERAGE, LOW_COVERAGE, EXCESSIVE_COVERAGE
-    FROM callable
-    WHERE (SAMPLE='{s}' AND TARGET='{t}')
-    """.format(s=dnr, t=target)
-
-    callable_sql = """SELECT CALLABLE
-    FROM callable
-    WHERE (SAMPLE='{s}' AND TARGET='{t}')
-    """.format(s=dnr, t=target)
-    c.execute(total_sql)
-    all_out = [val for tup in c.fetchall() for val in tup]
-
-    c.execute(callable_sql)
-    callable_out = [val for tup in c.fetchall() for val in tup]
-
-    conn.close()
-
-    return (sum(callable_out) / sum(all_out)) * 100
-
-
-def get_perc_target_covered(dnr, target, serie, db=None):
-    if db is None:
-        db = METRICSDB
-    conn = sqlite3.connect(db)
-    c = conn.cursor()
-
-    percentage = """SELECT ROUND(PERCENTAGE, 1)
-    FROM procenttargetcovered
-    WHERE (SAMPLE='{s}' AND TARGET='{t}' AND SERIE='{serie}')
-    """.format(s=dnr, t=target, serie=serie)
-    c.execute(percentage)
-    return c.fetchone()[0]
-
-
 def read_sangerfile(f):
     sample, extension = os.path.splitext(os.path.split(f)[1])
     df = pd.read_csv(f, sep='\t', header=None)
@@ -115,9 +74,12 @@ rule seriereport:
             if input_dict[dnr]['panel'] is None:
                 perctargetcovered = 'nvt'
             elif input_dict[dnr]['panel'] is not None:
-                perctargetcovered = MR.get_perc_target_covered(input_dict[dnr]['panel'])
+                p = input_dict[dnr]['panel']
+                perctargetcovered = MR.get_perc_target_covered(p)
 
-            picard_data = MR.get_alignmetrics() + MR.get_hsmetrics()
+            metrics_alignment = MR.get_alignmetrics_for_seriereport()
+            metrics_hs = MR.get_hsmetrics_for_seriereport()
+            picard_data = metrics_alignment + metrics_hs
             row1, col1 = write_list([dnr, pakket, panel]
                                     + picard_data
                                     + [perctargetcovered],
