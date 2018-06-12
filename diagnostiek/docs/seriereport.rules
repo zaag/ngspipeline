@@ -45,6 +45,7 @@ rule seriereport:
         "Creating excel file for serie."
     run:
         import glob
+        from ngsscriptlibrary.pipeline_db import MetricsDBReader
         db = METRICSDB
         writer = pd.ExcelWriter(output[0], engine='xlsxwriter')
         wb = writer.book

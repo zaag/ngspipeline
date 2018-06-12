@@ -13,19 +13,19 @@ import sqlite3
 import subprocess
 
 import vcf
-import xlsxwriter
 import matplotlib
+import xlsxwriter
 import numpy as np
 import pandas as pd
 
 from ngsscriptlibrary.parsing import *
 
-from ngsscriptlibrary import sample_in_db
 from ngsscriptlibrary import metrics2db
-from ngsscriptlibrary import perc_target_covered2db
 from ngsscriptlibrary import summary2db
-from ngsscriptlibrary import samplesheetinfo2db
 from ngsscriptlibrary import sangers2db
+from ngsscriptlibrary import sample_in_db
+from ngsscriptlibrary import samplesheetinfo2db
+from ngsscriptlibrary import perc_target_covered2db
 
 matplotlib.use('Agg')
 
