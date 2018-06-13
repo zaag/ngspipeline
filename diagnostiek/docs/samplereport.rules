@@ -22,57 +22,6 @@ def write_list(listname, worksheet, row=0, col=0, skip=1, header=False,
     return (row, col)
 
 
-def get_alignmetrics_fromdb(sampleID):
-    read1 = '''SELECT DISTINCT
-    TOTAL_READS,
-    round(PCT_CHIMERAS*100, 1),
-    round(MEAN_READ_LENGTH, 1),
-    round(PCT_READS_ALIGNED_IN_PAIRS*100, 1)
-    FROM {table}
-    WHERE (CATEGORY = 'FIRST_OF_PAIR'
-    AND sample = '{dnr}'
-    AND serie = '{serie}')
-    '''.format(table='alignment', dnr=sampleID, serie=serie)
-
-    read2 = '''SELECT DISTINCT
-    round(MEAN_READ_LENGTH, 1),
-    round(PCT_READS_ALIGNED_IN_PAIRS*100, 1)
-    FROM {table}
-    WHERE (CATEGORY = 'SECOND_OF_PAIR'
-    AND sample = '{dnr}'
-    AND serie = '{serie}')
-    '''.format(table='alignment', dnr=sampleID, serie=serie)
-
-    conn = sqlite3.connect(METRICSDB)
-    c = conn.cursor()
-
-    c.execute(read1)
-    read1out = [val for tup in c.fetchall() for val in tup]
-
-    c.execute(read2)
-    read2out = [val for tup in c.fetchall() for val in tup]
-    conn.close()
-    return read1out + read2out
-
-
-def get_hsmetrics_fromdb(sampleID):
-    sql = '''SELECT DISTINCT
-    TARGET_TERRITORY,
-    round(PCT_PF_UQ_READS*100),
-    round(PCT_SELECTED_BASES*100)
-    FROM {table}
-    WHERE (sample = '{dnr}'
-    AND serie = '{serienr}')
-    '''.format(table='hsmetrics', dnr=sampleID, serienr=serie)
-
-    conn = sqlite3.connect(METRICSDB)
-    c = conn.cursor()
-    c.execute(sql)
-    out = [val for tup in c.fetchall() for val in tup]
-    conn.close()
-    return out
-
-
 def mean_doc(docfile):
     "Create a dataframe from GATK's DepthOfCoverage. Return mean and std."
     df = pd.read_csv(docfile, index_col=0, sep='\t')
@@ -182,6 +131,8 @@ rule samplereport:
         SANGER = ['Gen', 'Chr.', 'g.Start', 'g.Eind', 'Resultaat',
                   'Paraaf analist', 'Paraaf staf']
 
+        MR = MetricsDBReader(metricsdb, wildcards.sample, serie,
+                             input_dict[wildcards.sample]['capture'])
         # First fill in the sample ID
         ws1.write(1, 1, wildcards.sample)
         samenvatting = '''=B4&"("&B2&" + "&B3&"; " &B5&", "&B6&", "&B7&")"'''
@@ -193,8 +144,7 @@ rule samplereport:
         row1, col1 = write_list(SEQRAP, ws1, header='SEQUENCE RAPPORT',
                                 formatheader=headerformat, row=row1, col=col1)
 
-        row1, col1 = write_list(get_alignmetrics_fromdb(wildcards.sample) +
-                                get_hsmetrics_fromdb(wildcards.sample),
+        row1, col1 = write_list(MR.get_alignmetrics() + MR.get_hsmetrics(),
                                 ws1, row=row1 - len(SEQRAP) - 2, col=1)
 
         row1, col1 = write_list(mean_doc(input.doc),
@@ -268,7 +218,9 @@ rule samplereport:
         row3, col3 = write_list(VARS4, ws3, formatheader=headerformat,
                                 header='CNV', row=row3 + 2,
                                 orientation='cols', format=underlined)
-
+        ws3.data_validation(row3, 0, row3+3, 0,
+                            {'validate': 'list',
+                             'source': ['WT', 'NVT', 'AFW', 'NTS']})
         ws3.data_validation(row3, 2, row3+3, 2,
                             {'validate': 'list',
                              'source': ['WT', 'NVT', 'AFW', 'NTS']})
