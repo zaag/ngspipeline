@@ -75,8 +75,7 @@ rule seriereport:
             if input_dict[dnr]['panel'] is None:
                 perctargetcovered = 'nvt'
             elif input_dict[dnr]['panel'] is not None:
-                p = input_dict[dnr]['panel']
-                perctargetcovered = MR.get_perc_target_covered(p)
+                perctargetcovered = MR.get_perc_target_covered()
 
             metrics_alignment = MR.get_alignmetrics_for_seriereport()
             metrics_hs = MR.get_hsmetrics_for_seriereport()
