@@ -156,7 +156,7 @@ rule countbases:
     input:
         expand("reads/{sample}.R1.fastq.gz", sample=samples)
     output:
-        temp("gatkfiles/BasePercentages.txt")
+        "gatkfiles/BasePercentages.txt"
     message:
         "Calculating per base percentage for each R1"
     run:
@@ -204,7 +204,7 @@ rule hsmetrics:
     input:
         rules.markduplicates.output.bam
     output:
-        temp("picardmetrics/{sample}.HSMetrics.txt"),
+        temp("picardmetrics/{sample}.HSMetrics.txt")
     log:
         "logfiles/{sample}.HSmetrics.log"
     message:
@@ -318,7 +318,7 @@ rule getsangers:
     input:
         rules.callableloci.output.bed
     output:
-        sangers = temp("gatkfiles/{sample}.sangers.txt"),
+        sangers = "gatkfiles/{sample}.sangers.txt",
         tempbed = temp("gatkfiles/{sample}.tmp.bed")
 
     message:
@@ -430,8 +430,8 @@ rule callsnpcheck:
     input:
         rules.markduplicates.output.bam
     output:
-        vcf = temp("gatkfiles/{sample}.snpcheck.vcf"),
-        index = temp("gatkfiles/{sample}.snpcheck.vcf.idx")
+        vcf = "gatkfiles/{sample}.snpcheck.vcf",
+        index = "gatkfiles/{sample}.snpcheck.vcf.idx"
     message:
         "Calling SNP checks sample"
     log:
@@ -529,7 +529,7 @@ rule duplicatesnpcheck:
         extrangs = rules.comparesnpcheckssample.output.ngs
 
     output:
-        snpcomp = temp("SNPcheck/{sample}.snpcheck.comp.txt")
+        snpcomp = "SNPcheck/{sample}.snpcheck.comp.txt"
 
     message:
         "Creating SNPcheck output"
@@ -567,7 +567,7 @@ rule cnvdetection:
     input:
         expand(rules.addcnvdata.output, sample=samples)
     output:
-        temp("gatkfiles/cnvdetection.txt")
+        "gatkfiles/cnvdetection.txt"
     message:
         "CNV detection"
     log:
