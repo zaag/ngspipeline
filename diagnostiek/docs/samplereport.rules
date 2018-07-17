@@ -170,10 +170,9 @@ rule samplereport:
                                 header='NON-CALLABLE SANGER FRAGMENTEN',
                                 skip=3, orientation='cols', format=underlined)
 
-        with open(input.sangers) as f:
-            for line in f:
-                line = line.strip()
-                out = [x for x in line.split('\t')]
+        sangers = MR.get_sanger_fragments()
+            for line in sangers:
+                out = [x for x in line]
                 if 'Geen sangers:' in line:
                     ws2.set_column('A:A', 26)
                     [out.append(' ') for _ in range(len(SANGER))]
