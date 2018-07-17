@@ -1,6 +1,7 @@
 __author__ = "Martin Haagmans (https://github.com/zaag)"
 __license__ = "MIT"
 
+from ngsscriptlibrary import MetricsDBReader
 
 def write_list(listname, worksheet, row=0, col=0, skip=1, header=False,
                orientation='rows', format=None, formatheader=None):
@@ -131,7 +132,7 @@ rule samplereport:
         SANGER = ['Gen', 'Chr.', 'g.Start', 'g.Eind', 'Resultaat',
                   'Paraaf analist', 'Paraaf staf']
 
-        MR = MetricsDBReader(metricsdb, wildcards.sample, serie,
+        MR = MetricsDBReader(METRICSDB, wildcards.sample, serie,
                              input_dict[wildcards.sample]['capture'])
         # First fill in the sample ID
         ws1.write(1, 1, wildcards.sample)
@@ -171,19 +172,19 @@ rule samplereport:
                                 skip=3, orientation='cols', format=underlined)
 
         sangers = MR.get_sanger_fragments()
-            for line in sangers:
-                out = [x for x in line]
-                if 'Geen sangers:' in line:
-                    ws2.set_column('A:A', 26)
-                    [out.append(' ') for _ in range(len(SANGER))]
-                    row2, col2 = write_list(out, ws2, row=row2-1, col=0,
-                                            orientation='cols')
+        for line in sangers:
+            out = [x for x in line]
+            if 'Geen sangers:' in line:
+                ws2.set_column('A:A', 26)
+                [out.append(' ') for _ in range(len(SANGER))]
+                row2, col2 = write_list(out, ws2, row=row2-1, col=0,
+                                        orientation='cols')
 
-                    row2, col2 = write_list([' ', 'Paraaf staf voor gezien: '],
-                                            ws2, row=row2, col=0)
-                else:
-                    row2, col2 = write_list(out[:4], ws2, row=row2, col=0,
-                                            orientation='cols')
+                row2, col2 = write_list([' ', 'Paraaf staf voor gezien: '],
+                                        ws2, row=row2, col=0)
+            else:
+                row2, col2 = write_list(out[:4], ws2, row=row2, col=0,
+                                        orientation='cols')
 
         ws3.write(3, 11, 'Paraaf', underlined)
         ws3.write(4, 10, 'Eerste beoordeling: ')
