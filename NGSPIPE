@@ -32,11 +32,11 @@ def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie):
             for folder in folders:
                 create_dir('{}/{}'.format(pdir, folder))
 
-        bam = glob.glob('{}/output/{}.*.bam'.format(workdir, s))[0]
-        bai = glob.glob('{}/output/{}.*.bai'.format(workdir, s))[0]
-        vcf = glob.glob('{}/output/{}.*.vcf'.format(workdir, s))[0]
-        idx = glob.glob('{}/output/{}.*.vcf.idx'.format(workdir, s))[0]
-        report = glob.glob('{}/output/{}.*.xlsx'.format(workdir, s))[0]
+        bam = glob.glob('{}/output/{}*.bam'.format(workdir, s))[0]
+        bai = glob.glob('{}/output/{}*.bai'.format(workdir, s))[0]
+        vcf = glob.glob('{}/output/{}*.vcf'.format(workdir, s))[0]
+        idx = glob.glob('{}/output/{}*.vcf.idx'.format(workdir, s))[0]
+        report = glob.glob('{}/output/{}*.xlsx'.format(workdir, s))[0]
 
         for f in bam, bai, vcf, idx, report:
             fb, fn = os.path.split(f)
@@ -77,6 +77,8 @@ if __name__ == '__main__':
                         help="Move data to archive")
     parser.add_argument("--hester", action='store_true',
                         help="Run is rehybed @ MiSeq")
+    parser.add_argument("--project", action='store_true',
+                        help="Run is re-analyzed @ BaseSpace")
 
     args = parser.parse_args()
 
@@ -84,6 +86,7 @@ if __name__ == '__main__':
     threads = args.threads
     rule = args.rule
     bserie = serie
+
     if args.hester:
         bserie = r'{}\ \(2\)'.format(serie)
 
@@ -100,7 +103,6 @@ if __name__ == '__main__':
     BASEMOUNT = os.path.join(BASEDIR, 'basespace')
     SERIEDIR = os.path.join('/', 'mnt', 'ngs', 'Analyse*MiSEQ', 'MiSeq*Serie*{}*'.format(serie))
     SNPCHECKDIR = os.path.join(SERIEDIR, 'SNPcheck')
-
     if args.samplesheet:
         SAMPLESHEET = args.samplesheet
     else:
@@ -113,7 +115,10 @@ if __name__ == '__main__':
     if args.download:
         os.mkdir(READS)
         run_command('basemount {} -c ormook'.format(BASEMOUNT))
-        run_command('cp -r {}/basespace/Projects/{}/Samples/*/Files/*.gz {}'.format(BASEDIR, serie, READS))
+        if args.project:
+            run_command('cp -r {}/basespace/Projects/{}/Samples/*\(2\)/Files/*.gz {}'.format(BASEDIR, serie, READS))
+        else:
+            run_command('cp -r {}/basespace/Projects/{}/Samples/*/Files/*.gz {}'.format(BASEDIR, serie, READS))
         run_command('cp {} {}/SampleSheet.csv'.format(SAMPLESHEET, READS))
 
         try:
@@ -136,7 +141,7 @@ if __name__ == '__main__':
             if not os.path.isfile(snpcheckfile):
                 run_command('touch {}'.format(snpcheckfile))
 
-        run_command('snakemake -s {}/diagnostiek/Snakefile -j{} --configfile {} --directory {} -R {}'.format(SCRIPTHOME, threads, CONFIG, READS, rule))
+        run_command('snakemake --rerun-incomplete -s {}/diagnostiek/Snakefile -j{} --configfile {} --directory {} -R {}'.format(SCRIPTHOME, threads, CONFIG, READS, rule))
 
     if args.cleanup:
         samples = samplesheet_to_sample_genesis('{}/SampleSheet.csv'.format(READS))
