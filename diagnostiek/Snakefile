@@ -145,8 +145,8 @@ rule prepare:
     run:
         for sample in samples:
             samplesheetinfo2db(input_dict[sample], sample, SAMPLEDB)
-            R1 = glob.glob('{s}*R1*.gz'.format(s=sample))
-            R2 = glob.glob('{s}*R2*.gz'.format(s=sample))
+            R1 = glob.glob('{s}_*R1*.gz'.format(s=sample))
+            R2 = glob.glob('{s}_*R2*.gz'.format(s=sample))
             if R1 and R2:
                 os.rename(R1[0], 'reads/{}.R1.fastq.gz'.format(sample))
                 os.rename(R2[0], 'reads/{}.R2.fastq.gz'.format(sample))
