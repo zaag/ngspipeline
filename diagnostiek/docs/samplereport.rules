@@ -173,17 +173,16 @@ rule samplereport:
 
         sangers = MR.get_sanger_fragments()
         for line in sangers:
-            out = [x for x in line]
             if 'Geen sangers:' in line:
                 ws2.set_column('A:A', 26)
-                [out.append(' ') for _ in range(len(SANGER))]
-                row2, col2 = write_list(out, ws2, row=row2-1, col=0,
+                [line.append(' ') for _ in range(len(SANGER))]
+                row2, col2 = write_list(line, ws2, row=row2-1, col=0,
                                         orientation='cols')
 
                 row2, col2 = write_list([' ', 'Paraaf staf voor gezien: '],
                                         ws2, row=row2, col=0)
             else:
-                row2, col2 = write_list(out[:4], ws2, row=row2, col=0,
+                row2, col2 = write_list(line[:4], ws2, row=row2, col=0,
                                         orientation='cols')
 
         ws3.write(3, 11, 'Paraaf', underlined)
