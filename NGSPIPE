@@ -39,7 +39,7 @@ def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie):
         report = glob.glob('{}/output/{}*.xlsx'.format(workdir, s))[0]
 
         for f in bam, bai, vcf, idx, report:
-            fb, fn = os.path.split(f)
+            _fb, fn = os.path.split(f)
             if not os.path.isfile('{}/{}/{}'.format(outputdir, p, fn)):
                 fn_base, fn_ext = os.path.splitext(fn)
                 if fn_ext == '.vcf':
@@ -117,7 +117,7 @@ if __name__ == '__main__':
         os.mkdir(READS)
         run_command('basemount {} -c ormook'.format(BASEMOUNT))
         if args.project:
-            run_command('cp -r {}/basespace/Projects/{}/Samples/*\(2\)/Files/*.gz {}'.format(BASEDIR, serie, READS))
+            run_command(r'cp -r {}/basespace/Projects/{}/Samples/*\(2\)/Files/*.gz {}'.format(BASEDIR, serie, READS))
         else:
             run_command('cp -r {}/basespace/Projects/{}/Samples/*/Files/*.gz {}'.format(BASEDIR, serie, READS))
         run_command('cp {} {}/SampleSheet.csv'.format(SAMPLESHEET, READS))
@@ -154,5 +154,5 @@ if __name__ == '__main__':
         else:
             run_command('cp {}/reads/*.gz {}/MiSeq/Diagnostiek/MS{}'.format(READS, ARCHIEF, serie))
         finally:
-            run_command('cp {}/output/*.xlsx {}/output/*.pdf {}/MiSeq/Diagnostiek/MS{}'.format(READS, ARCHIEF, serie))
+            run_command('cp {}/output/*.xlsx {}/output/*.pdf {}/MiSeq/Diagnostiek/MS{}'.format(READS, READS, ARCHIEF, serie))
         run_command("rsync -rlzuvP --delete /data/dnadiag/databases/ /mnt/kg_nextgen_archief/ServerDatabaseArchief/")
