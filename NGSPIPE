@@ -103,6 +103,7 @@ if __name__ == '__main__':
     BASEMOUNT = os.path.join(BASEDIR, 'basespace')
     SERIEDIR = os.path.join('/', 'mnt', 'ngs', 'Analyse*MiSEQ', 'MiSeq*Serie*{}*'.format(serie))
     SNPCHECKDIR = os.path.join(SERIEDIR, 'SNPcheck')
+
     if args.samplesheet:
         SAMPLESHEET = args.samplesheet
     else:
@@ -152,4 +153,6 @@ if __name__ == '__main__':
             print(e)
         else:
             run_command('cp {}/reads/*.gz {}/MiSeq/Diagnostiek/MS{}'.format(READS, ARCHIEF, serie))
+        finally:
+            run_command('cp {}/output/*.xlsx {}/output/*.pdf {}/MiSeq/Diagnostiek/MS{}'.format(READS, ARCHIEF, serie))
         run_command("rsync -rlzuvP --delete /data/dnadiag/databases/ /mnt/kg_nextgen_archief/ServerDatabaseArchief/")
