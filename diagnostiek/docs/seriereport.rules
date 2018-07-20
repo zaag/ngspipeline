@@ -279,24 +279,5 @@ rule seriereport:
                                                                                          index=False)
 
         ws1.set_column('A:Z', 18)
-        protect_options = {
-                        'objects': False,
-                        'scenarios': False,
-                        'format_cells':          True,
-                        'format_columns':        False,
-                        'format_rows':           False,
-                        'insert_columns':        False,
-                        'insert_rows':           False,
-                        'insert_hyperlinks':     False,
-                        'delete_columns':        False,
-                        'delete_rows':           False,
-                        'select_locked_cells':   True,
-                        'sort':                  False,
-                        'autofilter':            False,
-                        'pivot_tables':          False,
-                        'select_unlocked_cells': True,
-                    }
-        ws2.protect(password = 'cerberus',
-                    options = protect_options
-                    )
+
         wb.close()
