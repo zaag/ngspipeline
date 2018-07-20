@@ -583,7 +583,7 @@ rule cnvdetection:
         for capture in captures:
             screening = False
             for s in samples:
-                workdir = os.path.join(os.getcwd(), 'output', capture, 'CNV')
+                workdir = os.path.join(os.getcwd(), 'output', 'CNV_{}'.format(capture))
                 if input_dict[s]['capture'] == capture:
                     screening = input_dict[s]['cnvscreening']
             if screening:

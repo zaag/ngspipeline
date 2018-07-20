@@ -142,7 +142,7 @@ if __name__ == '__main__':
             if not os.path.isfile(snpcheckfile):
                 run_command('touch {}'.format(snpcheckfile))
 
-        run_command('snakemake --rerun-incomplete -s {}/diagnostiek/Snakefile -j{} --configfile {} --directory {} -R {}'.format(SCRIPTHOME, threads, CONFIG, READS, rule))
+        run_command('snakemake --rerun-incomplete --quiet -s {}/diagnostiek/Snakefile -j{} --configfile {} --directory {} -R {}'.format(SCRIPTHOME, threads, CONFIG, READS, rule))
 
     if args.cleanup:
         samples = samplesheet_to_sample_genesis('{}/SampleSheet.csv'.format(READS))

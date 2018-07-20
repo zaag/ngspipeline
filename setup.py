@@ -10,4 +10,7 @@ setup(name='NGSPIPE',
       url='www.github.com/zaag/ngspipeline',
       license='MIT',
       scripts=['NGSPIPE'],
+      packages=['diagnostiek'],
+      package_dir={'diagnostiek': 'diagnostiek'},
+      package_data={'diagnostiek': ['diagnostiek/docs/*']}
       )
