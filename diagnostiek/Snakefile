@@ -154,13 +154,15 @@ rule prepare:
 
 rule countbases:
     input:
-        expand("reads/{sample}.R1.fastq.gz", sample=samples)
+        "reads/{sample}.R1.fastq.gz"
     output:
-        temp("gatkfiles/BasePercentages.txt")
+        "gatkfiles/{sample}.basepercentages.done"
     message:
-        "Calculating per base percentage for each R1"
+        "Calculating per base percentage"
     run:
-        get_base_count_filelist(output[0], input)
+        counts = get_basecounts(input)
+        base_perc_reads2db(wildcards.sample, serie, counts, METRICSDB)
+        shell("touch {output}")
 
 
 rule mapreads:

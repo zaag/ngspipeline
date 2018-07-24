@@ -241,9 +241,9 @@ rule samplereport:
             ws4.set_column('G:G', 18)
             ws4.set_column('I:I', 18)
 
-            cnv_calls = 'output/{}/CNV/Calls/{}.txt'.format(capture, wildcards.sample)
-            cnv_archive = 'output/{}/CNV/archive.txt'.format(capture)
-            cnv_excluded = 'output/{}/CNV/excluded.txt'.format(capture)
+            cnv_calls = 'output/CNV_{}/Calls/{}.txt'.format(capture, wildcards.sample)
+            cnv_archive = 'output/CNV_{}/archive.txt'.format(capture)
+            cnv_excluded = 'output/CNV_{}/excluded.txt'.format(capture)
 
             if not os.path.isfile(cnv_calls):
                 row4, col4 = write_list(['Geen calls', '',
