@@ -1,4 +1,4 @@
-__author__ = "Martin Haagmans (https://github.com/zaag)"
+__author__ = "Martin Haagmans (https://github.com/martinhaagmans)"
 __license__ = "MIT"
 
 rule qcplots:
