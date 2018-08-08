@@ -25,7 +25,8 @@ def write_list(listname, worksheet, row=0, col=0, skip=1, header=False,
 
 def standaardfragmenten_naar_df(excelfile):
     df = pd.read_excel(excelfile)
-    df = df[['BEPALING', 'FRACTIENR', 'EXPERIMENTNR', 'Score', 'chr.', 'primer min', 'primer max']].dropna()
+    df = df[['BEPALING', 'FRACTIENR', 'EXPERIMENTNR', 'Score', 'chr.', 'primer min', 'primer max']]
+    df = df.dropna(how='all')
     df['chr.'] = df['chr.'].astype('int32')
     df['primer min'] = df['primer min'].astype('int32')
     df['primer max'] = df['primer max'].astype('int32')
