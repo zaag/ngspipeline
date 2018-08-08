@@ -196,17 +196,18 @@ rule samplereport:
         df_serie = standaardfragmenten_naar_df(standaardfragmenten)
         standaard = standaardfragmenten_dict_sample(wildcards.sample, df_serie)
 
-        for line in sangers:
-            if 'Geen sangers:' in line:
-                ws2.set_column('A:A', 26)
-                [line.append(' ') for _ in range(len(SANGER))]
-                row2, col2 = write_list(line, ws2, row=row2-1, col=0,
-                                        orientation='cols')
+        
+        if 'Geen sangers:' in sangers:
+            ws2.set_column('A:A', 26)
+            [sangers.append(' ') for _ in range(len(SANGER))]
+            row2, col2 = write_list(sangers, ws2, row=row2-1, col=0,
+                                    orientation='cols')
 
-                row2, col2 = write_list([' ', 'Paraaf staf voor gezien: '],
-                                        ws2, row=row2, col=0)
-            else:
-                gene, chrom, start, end = line.split()
+            row2, col2 = write_list([' ', 'Paraaf staf voor gezien: '],
+                                    ws2, row=row2, col=0)
+        else:
+            for line in sangers:
+                gene, chrom, start, end = line
                 start = int(start)
                 end = int(end)
                 score = 'NoScore'
