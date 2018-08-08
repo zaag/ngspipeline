@@ -214,7 +214,7 @@ rule samplereport:
                 start = int(start)
                 end = int(end)
                 score = 'NoScore'
-                for _ in standaard.keys():
+                for _ in standaard:
                     st_chrom = 'chr{}'.format(_['chr.'])
                     st_start = int(_['g. min'])
                     st_end = int(_['g. max'])
