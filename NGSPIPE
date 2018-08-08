@@ -103,6 +103,7 @@ if __name__ == '__main__':
     BASEMOUNT = os.path.join(BASEDIR, 'basespace')
     SERIEDIR = os.path.join('/', 'mnt', 'ngs', 'Analyse*MiSEQ', 'MiSeq*Serie*{}*'.format(serie))
     SNPCHECKDIR = os.path.join(SERIEDIR, 'SNPcheck')
+    STANDARDFRAGS = os.path.join(SERIEDIR, 'MISEQ{} std fragmenten.xlsm'.format(serie))
 
     if args.samplesheet:
         SAMPLESHEET = args.samplesheet
@@ -122,6 +123,7 @@ if __name__ == '__main__':
             run_command('cp -r {}/basespace/Projects/{}/Samples/*/Files/*.gz {}'.format(BASEDIR, serie, READS))
         run_command('cp {} {}/SampleSheet.csv'.format(SAMPLESHEET, READS))
 
+
         try:
             os.mkdir('{}/MiSeqRunMetrics/{}'.format(ARCHIEF, serie))
         except FileExistsError as e:
@@ -134,6 +136,7 @@ if __name__ == '__main__':
 
         run_command('basemount --unmount {}'.format(BASEMOUNT))
         run_command('cp -r {} {}'.format(SNPCHECKDIR, READS))
+        run_command('cp {} {}'.format(STANDARDFRAGS, READS))
 
     if args.pipeline:
         samples = [_[0] for _ in samplesheet_to_sample_genesis('{}/SampleSheet.csv'.format(READS))]

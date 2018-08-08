@@ -23,6 +23,23 @@ def write_list(listname, worksheet, row=0, col=0, skip=1, header=False,
     return (row, col)
 
 
+def standaardfragmenten_naar_df(excelfile):
+    df = pd.read_excel(excelfile)
+    df = df[['BEPALING', 'FRACTIENR', 'EXPERIMENTNR', 'Score', 'chr.', 'primer min', 'primer max']].dropna()
+    df['chr.'] = df['chr.'].astype('int32')
+    df['primer min'] = df['primer min'].astype('int32')
+    df['primer max'] = df['primer max'].astype('int32')
+    df.set_index(['FRACTIENR'], inplace=True)
+    df.sort_index(inplace=True)
+    return df
+
+
+def standaardfragmenten_dict_sample(sample, df):
+    std_frag_df = df.loc[sample]
+    std_frag_dict = std_frag_df.reset_index().to_dict('records')
+    return std_frag_dict
+
+
 def mean_doc(docfile):
     "Create a dataframe from GATK's DepthOfCoverage. Return mean and std."
     df = pd.read_csv(docfile, index_col=0, sep='\t')
@@ -172,6 +189,9 @@ rule samplereport:
                                 skip=3, orientation='cols', format=underlined)
 
         sangers = MR.get_sanger_fragments()
+        df_serie = standaardfragmenten_naar_df(standaardfragmenten)
+        standaard = standaardfragmenten_dict_sample(wildcards.sample, df_serie)
+
         for line in sangers:
             if 'Geen sangers:' in line:
                 ws2.set_column('A:A', 26)
@@ -182,7 +202,15 @@ rule samplereport:
                 row2, col2 = write_list([' ', 'Paraaf staf voor gezien: '],
                                         ws2, row=row2, col=0)
             else:
-                row2, col2 = write_list(line[:4], ws2, row=row2, col=0,
+                gene, chrom, start, end = line.split()
+                start = int(start)
+                end = int(end)
+                score = 'NoScore'
+                for _ in standaard.keys():
+                    if _['g. min'] <= start and _['g. max'] >= end: 
+                        score = _['Score']
+                out = list(gene, chrom, start, end , score)
+                row2, col2 = write_list(out, ws2, row=row2, col=0,
                                         orientation='cols')
 
         ws3.write(3, 11, 'Paraaf', underlined)

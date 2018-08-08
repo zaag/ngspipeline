@@ -45,8 +45,8 @@ SNPCHECK = os.path.join(TARGETREPO, 'varia', 'NGS-SNPcheck.vcf')
 METRICSDB = os.path.join(DBREPO, 'metrics.sqlite')
 SOMOSADB = os.path.join(DBREPO, 'SO.mosaic.sqlite')
 
-samplesheet = 'SampleSheet.csv'
 
+samplesheet = 'SampleSheet.csv'
 
 def get_file_locations(todo, targetrepo):
     """Read dict with targets and analyses and add correct file locations.
@@ -127,6 +127,7 @@ captures = get_captures(input_dict)
 pakketten = get_pakketten(input_dict)
 samples = input_dict.keys()
 serie = [input_dict[_]['serie'] for _ in input_dict.keys()][0]
+standaardfragmenten = 'MISEQ{} std fragmenten.xlsm'.format(serie)
 
 
 # Rules for snakemake
