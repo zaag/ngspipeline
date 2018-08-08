@@ -199,6 +199,7 @@ rule samplereport:
         
         if 'Geen sangers:' in sangers:
             ws2.set_column('A:A', 26)
+            sangers = [sangers]
             [sangers.append(' ') for _ in range(len(SANGER))]
             row2, col2 = write_list(sangers, ws2, row=row2-1, col=0,
                                     orientation='cols')
