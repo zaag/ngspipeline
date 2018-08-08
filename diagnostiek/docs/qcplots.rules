@@ -3,7 +3,7 @@ __license__ = "MIT"
 
 rule qcplots:
     input:
-        rules.countbases.output,
+        expand(rules.countbases.output, sample=samples),
         expand(rules.insertsizemetrics.output, sample=samples),
         expand(rules.filtervariants.output, sample=samples)
     output:

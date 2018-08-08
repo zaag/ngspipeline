@@ -24,6 +24,7 @@ from ngsscriptlibrary import metrics2db
 from ngsscriptlibrary import summary2db
 from ngsscriptlibrary import sangers2db
 from ngsscriptlibrary import sample_in_db
+from ngsscriptlibrary import base_perc_reads2db
 from ngsscriptlibrary import samplesheetinfo2db
 from ngsscriptlibrary import perc_target_covered2db
 
@@ -155,13 +156,13 @@ rule prepare:
 
 rule countbases:
     input:
-        "reads/{sample}.R1.fastq.gz"
+        fq = "reads/{sample}.R1.fastq.gz"
     output:
         "gatkfiles/{sample}.basepercentages.done"
     message:
         "Calculating per base percentage"
     run:
-        counts = get_basecounts(input)
+        counts = get_basecounts(input.fq)
         base_perc_reads2db(wildcards.sample, serie, counts, METRICSDB)
         shell("touch {output}")
 

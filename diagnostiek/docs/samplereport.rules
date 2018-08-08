@@ -35,8 +35,12 @@ def standaardfragmenten_naar_df(excelfile):
 
 
 def standaardfragmenten_dict_sample(sample, df):
-    std_frag_df = df.loc[sample]
-    std_frag_dict = std_frag_df.reset_index().to_dict('records')
+    try:
+        std_frag_df = df.loc[sample]
+    except KeyError:
+        std_frag_dict = dict()
+    else:
+        std_frag_dict = std_frag_df.reset_index().to_dict('records')
     return std_frag_dict
 
 
