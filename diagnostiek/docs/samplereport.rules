@@ -208,14 +208,14 @@ rule samplereport:
                                     ws2, row=row2, col=0)
         else:
             for line in sangers:
-                gene, chrom, start, end = line
+                gene, chrom, start, end, *_ = line
                 start = int(start)
                 end = int(end)
                 score = 'NoScore'
                 for _ in standaard.keys():
                     if _['g. min'] <= start and _['g. max'] >= end: 
                         score = _['Score']
-                out = list(gene, chrom, start, end , score)
+                out = [gene, chrom, start, end , score]
                 row2, col2 = write_list(out, ws2, row=row2, col=0,
                                         orientation='cols')
 
