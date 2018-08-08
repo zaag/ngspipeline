@@ -216,8 +216,8 @@ rule samplereport:
                 score = 'NoScore'
                 for _ in standaard:
                     st_chrom = 'chr{}'.format(_['chr.'])
-                    st_start = int(_['g. min'])
-                    st_end = int(_['g. max'])
+                    st_start = int(_['primer min'])
+                    st_end = int(_['primer max'])
                     if st_start <= start and st_end >= end and st_chrom == chrom: 
                         score = _['Score']
                 out = [gene, chrom, start, end , score]
