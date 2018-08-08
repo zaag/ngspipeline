@@ -37,7 +37,8 @@ def standaardfragmenten_naar_df(excelfile):
 def standaardfragmenten_dict_sample(sample, df):
     try:
         std_frag_df = df.loc[sample]
-    except KeyError:
+    except KeyError as e:
+        print(e)
         std_frag_dict = dict()
     else:
         std_frag_dict = std_frag_df.reset_index().to_dict('records')
@@ -213,7 +214,10 @@ rule samplereport:
                 end = int(end)
                 score = 'NoScore'
                 for _ in standaard.keys():
-                    if _['g. min'] <= start and _['g. max'] >= end: 
+                    st_chrom = 'chr{}'.format(_['chr.'])
+                    st_start = int(_['g. min'])
+                    st_end = int(_['g. max'])
+                    if st_start <= start and st_end >= end and st_chrom == chrom: 
                         score = _['Score']
                 out = [gene, chrom, start, end , score]
                 row2, col2 = write_list(out, ws2, row=row2, col=0,
