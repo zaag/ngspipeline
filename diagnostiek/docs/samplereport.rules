@@ -37,7 +37,7 @@ def standaardfragmenten_naar_df(excelfile):
 
 def standaardfragmenten_dict_sample(sample, df):
     try:
-        std_frag_df = df.loc[sample]
+        std_frag_df = df.loc[sample].fillna('NoData')
     except KeyError as e:
         print(e)
         std_frag_dict = dict()
