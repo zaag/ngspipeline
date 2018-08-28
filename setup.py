@@ -11,6 +11,6 @@ setup(name='NGSPIPE',
       license='MIT',
       scripts=['NGSPIPE'],
       packages=['ngspipeline'],
-      package_dir={'ngspipeline': 'ngspipeline'},
-      package_data={'ngspipeline': ['ngspipeline/*']}
+      
+      package_data={'': ['Snakefile',  '*.rules']}
       )
