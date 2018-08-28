@@ -77,7 +77,7 @@ if __name__ == '__main__':
                         help="Move data to archive")
     parser.add_argument("--hester", action='store_true',
                         help="Run is rehybed @ MiSeq")
-    parser.add_argument("--project", nargs='?', default=False, constc='1',
+    parser.add_argument("--project", nargs='?', default=False, const='1',
                         help="Run is re-analyzed @ BaseSpace")
 
     args = parser.parse_args()
