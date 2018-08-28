@@ -98,12 +98,13 @@ if __name__ == '__main__':
     BASEDIR = "/data/dnadiag/reads"
     ARCHIEF = "/mnt/kg_nextgen_archief/IlluminaRawData/"
     SCRIPTHOME = os.path.dirname(os.path.realpath(__file__))
-    CONFIG = os.path.join(SCRIPTHOME, 'diagnostiek', 'docs', 'config.yaml')
+    CONFIG = os.path.join(SCRIPTHOME, 'ngspipeline', 'config.yaml')
     READS = os.path.join(BASEDIR, 'MS{}'.format(serie))
     BASEMOUNT = os.path.join(BASEDIR, 'basespace')
     SERIEDIR = os.path.join('/', 'mnt', 'ngs', 'Analyse*MiSEQ', 'MiSeq*Serie*{}*'.format(serie))
     SNPCHECKDIR = os.path.join(SERIEDIR, 'SNPcheck')
-    STANDARDFRAGS = os.path.join(SERIEDIR, 'MISEQ{} std fragmenten.xlsm'.format(serie))
+    STANDARDFRAGS = os.path.join(SERIEDIR, r'MISEQ{}\ std\ fragmenten.xlsm'.format(serie))
+    
 
     if args.samplesheet:
         SAMPLESHEET = args.samplesheet
@@ -145,7 +146,7 @@ if __name__ == '__main__':
             if not os.path.isfile(snpcheckfile):
                 run_command('touch {}'.format(snpcheckfile))
 
-        run_command('snakemake --rerun-incomplete --quiet -s {}/diagnostiek/Snakefile -j{} --configfile {} --directory {} -R {}'.format(SCRIPTHOME, threads, CONFIG, READS, rule))
+        run_command('snakemake --rerun-incomplete -s {}/ngspipeline/Snakefile -j{} --configfile {} --directory {} -R {}'.format(SCRIPTHOME, threads, CONFIG, READS, rule))
 
     if args.cleanup:
         samples = samplesheet_to_sample_genesis('{}/SampleSheet.csv'.format(READS))
