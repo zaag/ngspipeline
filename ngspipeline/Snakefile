@@ -162,9 +162,12 @@ rule countbases:
     message:
         "Calculating per base percentage"
     run:
-        counts = get_basecounts(input.fq)
-        base_perc_reads2db(wildcards.sample, serie, counts, METRICSDB)
-        shell("touch {output}")
+        if sample_in_db(wildcards.sample, serie, METRICSDB, 'basepercentages'):
+            shell("touch {output}")
+        elif not sample_in_db(wildcards.sample, serie, METRICSDB, 'basepercentages'):
+            counts = get_basecounts(input.fq)
+            base_perc_reads2db(wildcards.sample, serie, counts, METRICSDB)
+            shell("touch {output}")
 
 
 rule mapreads:
@@ -354,7 +357,7 @@ rule getsangers:
                                            str(target[1]), str(target[2])))
             if sangercount == 0:
                 sangers_for_db = 'Geen sangers: alles callable'
-            sangers2db(sangers_for_db, wildcards.sample, serie, target_name, METRICSDB)
+            sangers2db(sangers_for_db, serie,  wildcards.sample, target_name, METRICSDB)
         shell("touch {output.sangers} {output.tempbed}")
 
 
