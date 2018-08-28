@@ -122,7 +122,7 @@ def create_recalinput_file(samples):
 
 
 # Get todo list for samples
-input_dict = parse_samplesheet_for_pipeline(samplesheet, TARGETDB)
+input_dict = parse_samplesheet_for_pipeline(samplesheet, TARGETDB, ['Amplicon', 'Amplicons'])
 input_dict = get_file_locations(input_dict, TARGETREPO)
 captures = get_captures(input_dict)
 pakketten = get_pakketten(input_dict)
@@ -597,16 +597,16 @@ rule cnvdetection:
 
 
 include:
-    'docs/callmosaic.rules'
+    'callmosaic.rules'
 
 include:
-    'docs/samplereport.rules'
+    'samplereport.rules'
 
 include:
-    'docs/seriereport.rules'
+    'seriereport.rules'
 
 include:
-    'docs/qcplots.rules'
+    'qcplots.rules'
 
 
 rule END:
