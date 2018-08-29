@@ -45,6 +45,7 @@ TARGETDB = os.path.join(TARGETREPO, 'varia', 'captures.sqlite')
 SNPCHECK = os.path.join(TARGETREPO, 'varia', 'NGS-SNPcheck.vcf')
 METRICSDB = os.path.join(DBREPO, 'metrics.sqlite')
 SOMOSADB = os.path.join(DBREPO, 'SO.mosaic.sqlite')
+SAMPLEDB = os.path.join(DBREPO, 'samplesheets.sqlite')
 
 
 samplesheet = 'SampleSheet.csv'
@@ -146,7 +147,7 @@ rule prepare:
         expand("reads/{sample}.R2.fastq.gz", sample=samples)
     run:
         for sample in samples:
-            samplesheetinfo2db(input_dict[sample], sample, METRICSDB)
+            samplesheetinfo2db(input_dict[sample], sample, SAMPLEDB)
             R1 = glob.glob('{s}_*R1*.gz'.format(s=sample))
             R2 = glob.glob('{s}_*R2*.gz'.format(s=sample))
             if R1 and R2:
