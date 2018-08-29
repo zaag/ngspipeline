@@ -595,7 +595,7 @@ rule cnvdetection:
                     screening = input_dict[s]['cnvscreening']
             if screening:
                 os.makedirs(workdir, exist_ok=True)
-                shell("CNV --analyse -c {capture} -s {serie} -o {workdir} > {log} 2>&1")
+                shell("CNV -c {capture} -s {serie} -o {workdir} > {log} 2>&1")
         shell("touch {output}")
 
 
