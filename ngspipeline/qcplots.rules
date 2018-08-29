@@ -30,8 +30,7 @@ rule qcplots:
             conn.close()
             return df
 
-        def plot_basepercentages(basepercentages, outputpdf):
-            df = pd.read_csv(basepercentages, sep='\t', index_col=0)
+        def plot_basepercentages(df, outputpdf):
             df.index = [i.split('.')[0] for i in df.index]
             df.sort_index(inplace=True)
             sample_target = list()
@@ -98,7 +97,7 @@ rule qcplots:
             plt.close()
 
         pdf = PdfPages(output[0])
-        plot_basepercentages(input[0], pdf)
+        plot_basepercentages(get_df_baseperc_reads_serie(serie, METRICSDB), pdf)
         plot_insertsizes(get_insert_size_serie(serie), pdf)
         for sample in samples:
             pakkettarget = input_dict[sample]['pakkettarget']
