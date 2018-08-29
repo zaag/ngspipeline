@@ -16,6 +16,11 @@ def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie):
     folders = ['alleen cnv/brief gemaakt', 'nagekeken in Cartagenia/brief gemaakt',
                'CheckJoep', 'negatief/brief gemaakt', 'positief/brief gemaakt']
 
+    cnv_output_dirs = glob.glob('{}/output/CNV_*'.format(workdir))
+
+    for cnv_output_dir in cnv_output_dirs:
+        shututil.copytree(cnv_output_dir, outputdir)
+
     shutil.copyfile('{}/output/MS{}_report.xlsx'.format(workdir, serie),
                     '{}/MS{}_report.xlsx'.format(outputdir, serie))
     shutil.copyfile('{}/output/MS{}_QC.pdf'.format(workdir, serie),
