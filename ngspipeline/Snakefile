@@ -128,7 +128,7 @@ captures = get_captures(input_dict)
 pakketten = get_pakketten(input_dict)
 samples = input_dict.keys()
 serie = [input_dict[_]['serie'] for _ in input_dict.keys()][0]
-standaardfragmenten = 'MISEQ{} std fragmenten.xlsx'.format(serie)
+standaardfragmenten = 'MISEQ{} std fragmenten.xlsm'.format(serie)
 
 
 # Rules for snakemake
