@@ -19,7 +19,8 @@ def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie):
     cnv_output_dirs = glob.glob('{}/output/CNV_*'.format(workdir))
 
     for cnv_output_dir in cnv_output_dirs:
-        shutil.copytree(cnv_output_dir, outputdir)
+        cnv_dirname = os.path.basename(cnv_output_dir)
+        shutil.copytree(cnv_output_dir, os.path.join(outputdir, cnv_dirname))
 
     shutil.copyfile('{}/output/MS{}_report.xlsx'.format(workdir, serie),
                     '{}/MS{}_report.xlsx'.format(outputdir, serie))
