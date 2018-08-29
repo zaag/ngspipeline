@@ -16,11 +16,14 @@ def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie):
     folders = ['alleen cnv/brief gemaakt', 'nagekeken in Cartagenia/brief gemaakt',
                'CheckJoep', 'negatief/brief gemaakt', 'positief/brief gemaakt']
 
-    cnv_output_dirs = glob.glob('{}/output/CNV_*'.format(workdir))
+    cnv_output_dirs = glob.glob('{}/output/CNV_*/'.format(workdir))
 
     for cnv_output_dir in cnv_output_dirs:
         cnv_dirname = os.path.basename(cnv_output_dir)
-        shutil.copytree(cnv_output_dir, os.path.join(outputdir, cnv_dirname))
+        try:
+            shutil.copytree(cnv_output_dir, os.path.join(outputdir, cnv_dirname))
+        except OSError:
+            pass
 
     shutil.copyfile('{}/output/MS{}_report.xlsx'.format(workdir, serie),
                     '{}/MS{}_report.xlsx'.format(outputdir, serie))
