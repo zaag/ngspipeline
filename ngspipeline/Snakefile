@@ -38,7 +38,6 @@ PICARD = config["PICARD"]
 TARGETREPO = config["TARGET"]
 DBREPO = config['DB']
 JAVA = config['JAVA']
-pyCNV = config['pyCNV']
 
 # Define files
 TARGETDB = os.path.join(TARGETREPO, 'varia', 'captures.sqlite')
@@ -572,7 +571,7 @@ rule addcnvdata:
     run:
         if input_dict[wildcards.sample]['cnvscreening']:
             target = input_dict[wildcards.sample]['capture']
-            shell("{pyCNV} --analyse -c {target} -s {serie} -n {input} --sample {wildcards.sample} --addonly > {log} 2>&1")
+            shell("CNV -c {target} -s {serie} -n {input} --sample {wildcards.sample} --addonly > {log} 2>&1")
             shell("touch {output}")
         else:
             shell("touch {output}")
@@ -596,7 +595,7 @@ rule cnvdetection:
                     screening = input_dict[s]['cnvscreening']
             if screening:
                 os.makedirs(workdir, exist_ok=True)
-                shell("{pyCNV} --analyse -c {capture} -s {serie} -o {workdir} > {log} 2>&1")
+                shell("CNV --analyse -c {capture} -s {serie} -o {workdir} > {log} 2>&1")
         shell("touch {output}")
 
 
