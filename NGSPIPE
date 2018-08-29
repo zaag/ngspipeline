@@ -16,7 +16,7 @@ def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie):
     folders = ['alleen cnv/brief gemaakt', 'nagekeken in Cartagenia/brief gemaakt',
                'CheckJoep', 'negatief/brief gemaakt', 'positief/brief gemaakt']
 
-    cnv_output_dirs = glob.glob('{}/output/CNV_*/'.format(workdir))
+    cnv_output_dirs = glob.glob('{}/output/CNV_*'.format(workdir))
 
     for cnv_output_dir in cnv_output_dirs:
         cnv_dirname = os.path.basename(cnv_output_dir)
@@ -86,7 +86,7 @@ if __name__ == '__main__':
                         help="Move data to archive")
     parser.add_argument("--hester", action='store_true',
                         help="Run is rehybed @ MiSeq")
-    parser.add_argument("--project", nargs='?', default=False, const='1',
+    parser.add_argument("--project", nargs='?', default=False, const='2',
                         help="Run is re-analyzed @ BaseSpace")
 
     args = parser.parse_args()
@@ -95,6 +95,7 @@ if __name__ == '__main__':
     threads = args.threads
     rule = args.rule
     bserie = serie
+    project = args.project
 
     if args.hester:
         bserie = r'{}\ \(2\)'.format(serie)
@@ -128,7 +129,7 @@ if __name__ == '__main__':
         os.mkdir(READS)
         run_command('basemount {} -c ormook'.format(BASEMOUNT))
         if args.project:
-            run_command(r'cp -r {}/basespace/Projects/{}/Samples/*\(2\)/Files/*.gz {}'.format(BASEDIR, serie, READS))
+            run_command(r'cp -r {}/basespace/Projects/{}/Samples/*\({}\)/Files/*.gz {}'.format(BASEDIR, serie, project, READS))
         else:
             run_command('cp -r {}/basespace/Projects/{}/Samples/*/Files/*.gz {}'.format(BASEDIR, serie, READS))
         run_command('cp {} {}/SampleSheet.csv'.format(SAMPLESHEET, READS))
