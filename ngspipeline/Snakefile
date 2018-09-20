@@ -27,6 +27,7 @@ from ngsscriptlibrary import sample_in_db
 from ngsscriptlibrary import base_perc_reads2db
 from ngsscriptlibrary import samplesheetinfo2db
 from ngsscriptlibrary import perc_target_covered2db
+from ngsscriptlibrary import parse_sangers_for_seriereport
 
 matplotlib.use('Agg')
 
