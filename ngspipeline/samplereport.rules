@@ -178,12 +178,16 @@ rule samplereport:
                                 formatheader=headerformat, skip=1, row=row1,
                                 orientation='cols', format=underlined)
 
-        with open(input.snpcheck, 'r') as f:
-            for line in f:
-                line = line.strip()
-                row1, col1 = write_list([x for x in line.split('\t')],
-                                        ws1, row=row1, col=0,
-                                        orientation='cols')
+        snpcheck_data = MR.get_snpcheck()
+        rs_gpos_dict = get_rs_gpos_dict()
+        for locus, result in snpcheck_data['COMP'].items():
+            rsid = rs_gpos_dict[locus]
+            snpcheck_ngs_result = snpcheck_data['NGS'][locus]
+            snpcheck_alt_result = snpcheck_data['ALT'][locus]
+            snpcheck_excel = [locus, rsid, snpcheck_ngs_result, snpcheck_alt_result, result]
+            row1, col1 = write_list(snpcheck_excel,
+                                    ws1, row=row1, col=0,
+                                    orientation='cols')
 
         row1, col1 = write_list(INFO, ws1, header='ANALYSE INFO',
                                 formatheader=headerformat, row=row1 + 2, col=0)

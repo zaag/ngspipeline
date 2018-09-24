@@ -9,7 +9,7 @@ import sys
 import glob
 import gzip
 import shutil
-import sqlite3
+import sqlite
 import subprocess
 
 import vcf
@@ -28,6 +28,8 @@ from ngsscriptlibrary import base_perc_reads2db
 from ngsscriptlibrary import samplesheetinfo2db
 from ngsscriptlibrary import perc_target_covered2db
 from ngsscriptlibrary import parse_sangers_for_seriereport
+from ngsscriptlibrary import snpcheck2db
+from ngsscriptlibrary import get_snpcheck
 
 matplotlib.use('Agg')
 
@@ -451,11 +453,15 @@ rule callsnpcheck:
         "Calling SNP checks sample"
     log:
         "logfiles/{sample}.CallSNPcheck.log"
-    shell:
-        '''{JAVA} -jar {GATK} -R {REF} -T HaplotypeCaller \
-        -I {input} -o {output.vcf} -L {SNPCHECK} -alleles {SNPCHECK} \
-        -gt_mode GENOTYPE_GIVEN_ALLELES -GQB 0 > {log} 2>&1
-        '''
+    run:
+        if sample_in_db(wildcards.sample, serie, METRICSDB, 'snpcheck'):
+            shell('touch {output.vcf} {output.index}')  
+        elif not sample_in_db(wildcards.sample, serie, METRICSDB, 'snpcheck'):
+            shell('''{JAVA} -jar {GATK} -R {REF} -T HaplotypeCaller \
+                -I {input} -o {output.vcf} -L {SNPCHECK} -alleles {SNPCHECK} \
+                -gt_mode GENOTYPE_GIVEN_ALLELES -GQB 0 > {log} 2>&1
+                ''')
+            
 
 
 rule comparesnpcheckssample:
@@ -463,54 +469,30 @@ rule comparesnpcheckssample:
         vcf = rules.callsnpcheck.output.vcf,
         alt = "SNPcheck/{sample}.qpcrsnpcheck"
     output:
-        ngs = temp("SNPcheck/{sample}.snpcheck.ngsextra.txt"),
-        comp = temp("SNPcheck/{sample}.snpcheck.comp.temp")
-
+        temp("SNPcheck/{sample}.snpcheck.done.txt")
     message:
         "Comparing SNP checks sample"
     log:
         "logfiles/{sample}.CompareSNPcheck.log"
     run:
-        sd = parse_taqman(input.alt)
-        ngsd = parse_ngssnpcheck(input.vcf)
-        snpout = compare_snpchecks(sd, ngsd)
-        rsid_to_locus = get_rs_gpos_dict()
-
-        with open(output.comp, 'w') as f:
-            for k, v in snpout.items():
-                try:
-                    ngsresult = ngsd[k]
-                except KeyError:
-                    ngsresult = 'NoNGS'
-
-                out = ("{loc}\t{rs}\t{ngs}\t{sang}\t{result}\n"
-                      .format(loc=k, rs=rsid_to_locus[k],
-                              ngs=ngsresult, sang=sd[k],
-                              result=v))
-                f.write(out)
-
-            if not snpout:
-                for k, v in ngsd.items():
-                    try:
-                        rsid = rsid_to_locus[k]
-                    except KeyError as e:
-                        rsid = 'NGS-only'
-                    else:
-                        out = ("{loc}\t{rs}\t{ngs}\tNoTaqMan\tNoTaqMan\n"
-                              .format(loc=k, rs=rsid,
-                                      ngs=v)
-                              )
-                        f.write(out)
-
-
-        with open(output.ngs, 'w') as f:
-            [f.write('{loc}\tonbekend\t{ngs}\n'.format(loc=k, ngs=v))
-             for k, v in ngsd.items() if k not in sd.keys()]
+        if sample_in_db(wildcards.sample, serie, METRICSDB, 'snpcheck'):
+            shell('touch {output}')
+        else:
+            sd = parse_taqman(input.alt)
+            ngsd = parse_ngssnpcheck(input.vcf)
+            snpout = compare_snpchecks(sd, ngsd)
+            rsid_to_locus = get_rs_gpos_dict()
+            store_in_db = dict()
+            store_in_db['NGS'] = ngsd
+            store_in_db['ALT'] = sd
+            store_in_db['COMP'] = snpout
+            snpcheck2db(wildcards.sample, serie, json.dumps(store_in_db), METRICSDB)
+            shell('touch {output}')
 
 
 rule comparesnpchecksserie:
     input:
-        expand(rules.comparesnpcheckssample.output.comp, sample=samples)
+        expand(rules.comparesnpcheckssample.output, sample=samples)
     output:
         temp("SNPcheck/duplicate.snpcheck.txt")
     message:

@@ -17,6 +17,7 @@ rule qcplots:
         import matplotlib.pyplot as plt
         from matplotlib.backends.backend_pdf import PdfPages
         from ngsscriptlibrary import get_df_baseperc_reads_serie
+
         def get_insert_size_serie(serie):
             conn = sqlite3.connect(METRICSDB)
             sql = '''
