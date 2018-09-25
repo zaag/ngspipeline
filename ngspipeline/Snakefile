@@ -9,7 +9,7 @@ import sys
 import glob
 import gzip
 import shutil
-import sqlite
+import sqlite3
 import subprocess
 
 import vcf
@@ -29,7 +29,6 @@ from ngsscriptlibrary import samplesheetinfo2db
 from ngsscriptlibrary import perc_target_covered2db
 from ngsscriptlibrary import parse_sangers_for_seriereport
 from ngsscriptlibrary import snpcheck2db
-from ngsscriptlibrary import get_snpcheck
 
 matplotlib.use('Agg')
 
@@ -483,63 +482,11 @@ rule comparesnpcheckssample:
             snpout = compare_snpchecks(sd, ngsd)
             rsid_to_locus = get_rs_gpos_dict()
             store_in_db = dict()
-            store_in_db['NGS'] = ngsd
-            store_in_db['ALT'] = sd
-            store_in_db['COMP'] = snpout
+            store_in_db['NGS'] = json.dumps(ngsd)
+            store_in_db['ALT'] = json.dumps(sd)
+            store_in_db['COMP'] = json.dumps(snpout)
             snpcheck2db(wildcards.sample, serie, json.dumps(store_in_db), METRICSDB)
             shell('touch {output}')
-
-
-rule comparesnpchecksserie:
-    input:
-        expand(rules.comparesnpcheckssample.output, sample=samples)
-    output:
-        temp("SNPcheck/duplicate.snpcheck.txt")
-    message:
-        "Comparing SNP checks serie"
-    log:
-        "logfiles/SNPcheckCompare.log"
-    run:
-        from collections import defaultdict
-        df = pd.concat(
-            [pd.read_csv(f, sep='\t', header=None, usecols=[0, 2],
-             names=['locus', f.split('/')[-1].split('.')[0]],
-             index_col='locus')
-                for f in input],
-            axis=1)
-        # key = string of calls, value = dnr --> >1 value = double SNP check
-        d = defaultdict(list)
-        for col in df:
-            x = str(df[col].values)
-            d[x].append(col)
-
-        with open(output[0], 'w') as f:
-            for k, v in d.items():
-                if len(v) > 1:
-                    f.write(' '.join(v))
-
-
-rule duplicatesnpcheck:
-    input:
-        serie = rules.comparesnpchecksserie.output,
-        sample = rules.comparesnpcheckssample.output.comp,
-        extrangs = rules.comparesnpcheckssample.output.ngs
-
-    output:
-        snpcomp = temp("SNPcheck/{sample}.snpcheck.comp.txt")
-
-    message:
-        "Creating SNPcheck output"
-    log:
-        "logfiles/SNPcheckCompare.log"
-    run:
-        import os
-        os.rename(str(input.sample), str(output.snpcomp))
-        with open(input.serie[0], 'r') as f:
-            for line in f:
-                line.strip()
-                if wildcards.sample in line:
-                    print_extra_ngscalls(output.snpcomp, input.extrangs)
 
 
 rule addcnvdata:

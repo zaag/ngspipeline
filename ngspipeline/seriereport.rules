@@ -36,7 +36,7 @@ rule seriereport:
     input:
         samplereports = expand(rules.samplereport.output, sample=samples),
         sangers = expand(rules.getsangers.output.sangers, sample=samples),
-        snpchecks = expand(rules.duplicatesnpcheck.output.snpcomp, sample=samples),
+        snpchecks = expand(rules.comparesnpcheckssample.output, sample=samples),
         dupsnps = rules.comparesnpchecksserie.output
 
     output:
@@ -92,7 +92,7 @@ rule seriereport:
             row2, col2 = write_list(['Geen sangers'], ws2, orientation='cols')
 
         else:
-             df.to_excel(writer, 'Sangers', header=False, index=False,
+            df.to_excel(writer, 'Sangers', header=False, index=False,
                          startrow=1, startcol=0)
 
             ws2 = writer.sheets['Sangers']
