@@ -480,7 +480,7 @@ rule comparesnpcheckssample:
             store_in_db = dict()
             store_in_db['NGS'] = parse_ngssnpcheck(input.vcf)
             store_in_db['ALT'] = parse_taqman(input.alt)
-            store_in_db['COMP'] = compare_snpchecks(sd, ngsd)
+            store_in_db['COMP'] = compare_snpchecks(store_in_db['ALT'], store_in_db['NGS'])
             store_in_db_json = json.dumps(store_in_db)
             snpcheck2db(wildcards.sample, serie, store_in_db_json, METRICSDB)
             shell('touch {output}')

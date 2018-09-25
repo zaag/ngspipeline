@@ -69,7 +69,6 @@ rule samplereport:
         alignment = rules.alignmetrics.output,
         insertsize = rules.insertsizemetrics.output.tabel,
         hsmetrics = rules.hsmetrics.output,
-        snpcheck = rules.duplicatesnpcheck.output.snpcomp,
         cnvdone = rules.cnvdetection.output,
         mosapng = rules.createmosaicoutput.output.png,
         mosalctable = rules.createmosaicoutput.output.lc,
