@@ -36,8 +36,7 @@ rule seriereport:
     input:
         samplereports = expand(rules.samplereport.output, sample=samples),
         sangers = expand(rules.getsangers.output.sangers, sample=samples),
-        snpchecks = expand(rules.comparesnpcheckssample.output, sample=samples),
-        dupsnps = rules.comparesnpchecksserie.output
+        snpchecks = expand(rules.comparesnpcheckssample.output, sample=samples)
 
     output:
         "output/MS{}_report.xlsx".format(serie)

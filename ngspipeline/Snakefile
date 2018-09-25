@@ -477,15 +477,12 @@ rule comparesnpcheckssample:
         if sample_in_db(wildcards.sample, serie, METRICSDB, 'snpcheck'):
             shell('touch {output}')
         else:
-            sd = parse_taqman(input.alt)
-            ngsd = parse_ngssnpcheck(input.vcf)
-            snpout = compare_snpchecks(sd, ngsd)
-            rsid_to_locus = get_rs_gpos_dict()
             store_in_db = dict()
-            store_in_db['NGS'] = json.dumps(ngsd)
-            store_in_db['ALT'] = json.dumps(sd)
-            store_in_db['COMP'] = json.dumps(snpout)
-            snpcheck2db(wildcards.sample, serie, json.dumps(store_in_db), METRICSDB)
+            store_in_db['NGS'] = parse_ngssnpcheck(input.vcf)
+            store_in_db['ALT'] = parse_taqman(input.alt)
+            store_in_db['COMP'] = compare_snpchecks(sd, ngsd)
+            store_in_db_json = json.dumps(store_in_db)
+            snpcheck2db(wildcards.sample, serie, store_in_db_json, METRICSDB)
             shell('touch {output}')
 
 
