@@ -156,14 +156,14 @@ rule seriereport:
         
         row1 += 1
 
-        row1, col1 = write_list('locus' + sorted(loci), 
+        row1, col1 = write_list(['locus'] + sorted(loci), 
                                ws1, row=row1, orientation='cols', col=0)
 
-        row1, col1 = write_list('rsid' + [rs2gpos[locus] for locus in sorted(loci)], 
+        row1, col1 = write_list(['rsid'] + [rs2gpos[locus] for locus in sorted(loci)], 
                                ws1, row=row1, orientation='cols', col=0)
 
         for sample, data in snpcheck_serie.items():
-            row1, col1 = write_list(sample + [data['COMP'][locus] for locus in sorted(loci)], 
+            row1, col1 = write_list([sample] + [data['COMP'][locus] for locus in sorted(loci)], 
                                     ws1, row=row1, orientation='cols', col=0)
 
         ws1.set_column('A:Z', 18)
