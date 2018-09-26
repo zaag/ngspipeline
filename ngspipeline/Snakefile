@@ -311,7 +311,7 @@ rule callableloci:
     log:
         "logfiles/{sample}.CallableLoci.log"
     run:
-        if sample_in_db(wildcards.sample, serie, METRICSDB, 'callable'):
+        if sample_in_db(wildcards.sample, serie, METRICSDB, 'sangers'):
             shell('touch {output.summary} {output.bed}')
         else:
             target = input_dict[wildcards.sample]['sanger']

@@ -22,16 +22,6 @@ def write_list(listname, worksheet, row=0, col=0, skip=1, header=False,
     return (row, col)
 
 
-def read_sangerfile(f):
-    sample, extension = os.path.splitext(os.path.split(f)[1])
-    df = pd.read_csv(f, sep='\t', header=None)
-    df.columns = ['gen', 'chrom', '{}_noncallablestart'.format(sample),
-                  '{}_noncallableend'.format(sample), 'targetstart',
-                  'targetend']
-    df.set_index(['chrom', 'targetstart', 'targetend', 'gen'], inplace=True)
-    return df, sample.split('.')[0]
-
-
 rule seriereport:
     input:
         samplereports = expand(rules.samplereport.output, sample=samples),
@@ -105,8 +95,6 @@ rule seriereport:
             ws1.write(row1, 0,
                       'De volgende patienten hebben >50 sangers: {}'.format(' '.join(failed)))
             row1 += 1
-
-        
 
         snpcheck_serie = get_snpcheck_serie(serie, db)
         duplicate_check = compare_snpchecks(snpcheck_serie)
