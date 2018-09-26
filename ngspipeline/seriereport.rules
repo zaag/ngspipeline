@@ -81,7 +81,7 @@ rule seriereport:
             row2, col2 = write_list(['Geen sangers'], ws2, orientation='cols')
 
         else:
-            df['gen', 'chrom', 'min', 'max', 'size', 'patients'].to_excel(writer, 'Sangers', header=False, index=False,
+            df[['gen', 'chrom', 'min', 'max', 'size', 'patients']].to_excel(writer, 'Sangers', header=False, index=False,
                                                                           startrow=1, startcol=0)
 
             ws2 = writer.sheets['Sangers']
