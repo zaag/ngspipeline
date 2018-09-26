@@ -106,57 +106,65 @@ rule seriereport:
                       'De volgende patienten hebben >50 sangers: {}'.format(' '.join(failed)))
             row1 += 1
 
-        if os.stat(input.dupsnps[0]).st_size == 0:
+        
+
+        snpcheck_serie = get_snpcheck_serie(serie, db)
+        duplicate_check = compare_snpchecks(snpcheck_serie)
+        duplicate_snpcheck_samples = list()
+
+        for calls, sample in duplicate_check.items():
+            if len(sample) > 1:
+                duplicate_snpcheck_samples.append(tuple(_ for _ in sample))
+
+        if not duplicate_snpcheck_samples :
             ws1.write(row1, 0, 'Alle NGS-SNPchecks zijn uniek')
             row1 += 1
 
-        elif os.stat(input.dupsnps[0]).st_size != 0:
-            with open(input.dupsnps[0]) as f:
-                for line in f:
-                    ws1.write(row1, 0,
-                              'De volgende patienten hebben dezelfde SNPcheck: {}'.format(line.strip()))
-                    row1 += 1
-        # row1 += 2
+        elif duplicate_snpcheck_samples:
+            for _ in duplicate_snpcheck_samples:
+                ws1.write(row1, 0,
+                          'De volgende patienten hebben dezelfde SNPcheck: {}'.format(_))
+                row1 += 1
+
+        loci = list()
         notaqman = list()
         taqmanerror = list()
 
-        for fn in input.snpchecks:
+        for sample, snpcheck_sample in snpcheck_serie.items():
             count = 0
-            sample_name = os.path.split(fn)[1].split('.')[0]
-
-            if os.stat(fn).st_size == 0:
-                notaqman.append(sample_name)
-                continue
-
-            with open (fn) as f:
-                for line in f:
-                    if 'NoTaqMan' in line :
-                        count += 1
-                    elif 'ERROR' in line:
-                        if sample_name not in taqmanerror:
-                            taqmanerror.append(sample_name)
+            for locus in sorted(snpcheck_sample['COMP'].keys()):
+                if locus not in loci:
+                    loci.append(locus)
+                alt_call = snpcheck_sample['ALT'][locus]
+                if alt_call == 'ERROR':
+                    if sample not in taqmanerror:
+                        taqmanerror.append(sample)
+                elif alt_call not in ['WT', 'HET', 'HOM']:
+                    count += 1
             if count > 2:
-                notaqman.append(sample_name)
-
-        if len(notaqman) > 0:
+               notaqman.append(sample)
+            
+        if notaqman:
             ws1.write(row1, 0, 'De volgende patienten hebben onvoldoende TaqMan calls: {}'.format(' '.join(notaqman)))
             row1 += 1
 
-        if len(taqmanerror) > 0:
+        if taqmanerror:
             ws1.write(row1, 0, 'De volgende patienten hebben afwijkende TaqMan calls: {}'.format(' '.join(taqmanerror)))
             row1 += 1
 
+        rs2gpos = get_rs_gpos_dict()
+        
+        row1 += 1
 
-        writer.sheets['Metrics'] = ws1
-        pd.concat([pd.read_csv(f, sep='\t', header=None, index_col=['locus', 'rsid'],
-                   names=['locus', 'rsid', 'ngs', 'sanger',
-                          f.split('/')[-1].split('.')[0]])
-                  .drop(['ngs', 'sanger'], axis=1) for f in input.snpchecks], axis=1
-                  ).reset_index().transpose().reset_index().fillna('NoInput').to_excel(writer, 'Metrics',
-                                                                                         startrow=row1 + 3,
-                                                                                         startcol=0,
-                                                                                         header=False,
-                                                                                         index=False)
+        row1, col1 = write_list('locus' + sorted(loci), 
+                               ws1, row=row1, orientation='cols', col=0)
+
+        row1, col1 = write_list('rsid' + [rs2gpos[locus] for locus in sorted(loci)], 
+                               ws1, row=row1, orientation='cols', col=0)
+
+        for sample, data in snpcheck_serie.items():
+            row1, col1 = write_list(sample + [data['COMP'][locus] for locus in sorted(loci)], 
+                                    ws1, row=row1, orientation='cols', col=0)
 
         ws1.set_column('A:Z', 18)
 

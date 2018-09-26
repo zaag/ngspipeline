@@ -29,6 +29,9 @@ from ngsscriptlibrary import samplesheetinfo2db
 from ngsscriptlibrary import perc_target_covered2db
 from ngsscriptlibrary import parse_sangers_for_seriereport
 from ngsscriptlibrary import snpcheck2db
+from ngsscriptlibrary import get_snpcheck_serie
+from ngsscriptlibrary import compare_snpchecks
+from ngsscriptlibrary import get_rs_gpos_dict
 
 matplotlib.use('Agg')
 
