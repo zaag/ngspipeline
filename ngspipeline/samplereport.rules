@@ -217,9 +217,9 @@ rule samplereport:
                 start = int(start)
                 end = int(end)
                 score = 'NoScore'
-                if not 'chr.' in standaard:
-                    continue
                 for _ in standaard:
+                    if not 'chr.' in _:
+                        continue
                     st_chrom = 'chr{}'.format(_['chr.'])
                     st_start = int(_['primer min'])
                     st_end = int(_['primer max'])

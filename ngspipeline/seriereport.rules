@@ -83,6 +83,10 @@ rule seriereport:
         else:
             df = df.reset_index()
             df.drop(['target_start', 'target_end'], inplace=True, axis=1)
+            gene_column = df['gen']
+            df.drop(labels=['gen'], axis=1, inplace=True)
+            df.insert(0, 'gen', gene_column)
+
             df.to_excel(writer, 'Sangers', header=False, index=False,
                         startrow=1, startcol=0)
 
