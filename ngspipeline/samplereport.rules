@@ -2,6 +2,8 @@ __author__ = "Martin Haagmans (https://github.com/martinhaagmans)"
 __license__ = "MIT"
 
 from ngsscriptlibrary import MetricsDBReader
+from ngsscriptlibrary import standaardfragmenten_dict_sample
+from ngsscriptlibrary import standaardfragmenten_naar_df
 
 def write_list(listname, worksheet, row=0, col=0, skip=1, header=False,
                orientation='rows', format=None, formatheader=None):
@@ -21,29 +23,6 @@ def write_list(listname, worksheet, row=0, col=0, skip=1, header=False,
         row += 1
 
     return (row, col)
-
-
-def standaardfragmenten_naar_df(excelfile):
-    df = pd.read_excel(excelfile)
-    df = df[['BEPALING', 'FRACTIENR', 'EXPERIMENTNR', 'Score', 'chr.', 'primer min', 'primer max']]
-    df = df.dropna(how='all')
-    df['chr.'] = df['chr.'].astype('int32')
-    df['primer min'] = df['primer min'].astype('int32')
-    df['primer max'] = df['primer max'].astype('int32')
-    df.set_index(['FRACTIENR'], inplace=True)
-    df.sort_index(inplace=True)
-    return df
-
-
-def standaardfragmenten_dict_sample(sample, df):
-    try:
-        std_frag_df = df.loc[sample].fillna('Geen score')
-    except KeyError as e:
-        print(e)
-        std_frag_dict = dict()
-    else:
-        std_frag_dict = std_frag_df.reset_index().to_dict('records')
-    return std_frag_dict
 
 
 def mean_doc(docfile):
@@ -216,7 +195,7 @@ rule samplereport:
                 gene, chrom, start, end, *_ = line
                 start = int(start)
                 end = int(end)
-                score = 'Geen standaard fragment'
+                score = 'Geen standaardfragment'
                 for _ in standaard:
                     if not 'chr.' in _:
                         continue
