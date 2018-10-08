@@ -107,7 +107,7 @@ if __name__ == '__main__':
 
     BASEDIR = "/data/dnadiag/reads"
     ARCHIEF = "/mnt/kg_nextgen_archief/IlluminaRawData/"
-    SCRIPTHOME = os.path.dirname(os.path.realpath(__file__))
+    SCRIPTHOME = '/data/dnadiag/ngspipeline/'
     CONFIG = os.path.join(SCRIPTHOME, 'ngspipeline', 'config.yaml')
     READS = os.path.join(BASEDIR, 'MS{}'.format(serie))
     BASEMOUNT = os.path.join(BASEDIR, 'basespace')
