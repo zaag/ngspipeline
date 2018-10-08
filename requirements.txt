@@ -1,0 +1,2 @@
+ngsscriptlibrary>=1.0
+pycnv>=1.0
