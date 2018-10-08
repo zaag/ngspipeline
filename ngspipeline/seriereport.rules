@@ -103,7 +103,7 @@ rule seriereport:
             row1 += 1
 
         snpcheck_serie = get_snpcheck_serie(serie, db)
-        duplicate_check = compare_snpchecks(snpcheck_serie)
+        duplicate_check = compare_snpchecks_serie(snpcheck_serie)
         duplicate_snpcheck_samples = list()
 
         for calls, sample in duplicate_check.items():
