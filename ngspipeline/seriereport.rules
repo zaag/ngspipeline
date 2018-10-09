@@ -34,7 +34,8 @@ rule seriereport:
         "Creating excel file for serie."
     run:
         import glob
-        from ngsscriptlibrary.pipeline_db import MetricsDBReader
+        from ngsscriptlibrary import MetricsDBReader
+        from ngsscriptlibrary import compare_snpchecks_serie
         db = METRICSDB
         writer = pd.ExcelWriter(output[0], engine='xlsxwriter')
         wb = writer.book
@@ -99,7 +100,7 @@ rule seriereport:
 
         if failed:
             ws1.write(row1, 0,
-                      'De volgende patienten hebben >50 sangers: {}'.format(' '.join(failed)))
+                      'De volgende patiënten hebben >50 sangers: {}'.format(' '.join(failed)))
             row1 += 1
 
         snpcheck_serie = get_snpcheck_serie(serie, db)
@@ -117,7 +118,7 @@ rule seriereport:
         elif duplicate_snpcheck_samples:
             for _ in duplicate_snpcheck_samples:
                 ws1.write(row1, 0,
-                          'De volgende patienten hebben dezelfde SNPcheck: {}'.format(_))
+                          'De volgende patiënten hebben dezelfde SNPcheck: {}'.format(' '.join(_)))
                 row1 += 1
 
         loci = list()
@@ -139,11 +140,11 @@ rule seriereport:
                notaqman.append(sample)
             
         if notaqman:
-            ws1.write(row1, 0, 'De volgende patienten hebben onvoldoende TaqMan calls: {}'.format(' '.join(notaqman)))
+            ws1.write(row1, 0, 'De volgende patiënten hebben onvoldoende TaqMan calls: {}'.format(' '.join(notaqman)))
             row1 += 1
 
         if taqmanerror:
-            ws1.write(row1, 0, 'De volgende patienten hebben afwijkende TaqMan calls: {}'.format(' '.join(taqmanerror)))
+            ws1.write(row1, 0, 'De volgende patiënten hebben afwijkende TaqMan calls: {}'.format(' '.join(taqmanerror)))
             row1 += 1
 
         rs2gpos = get_rs_gpos_dict()

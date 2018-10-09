@@ -93,7 +93,7 @@ rule qcplots:
             plt.title(title)
             try:
                 plt.savefig(plotfile, dpi=80)
-            except TypeError:
+            except (TypeError, ValueError):
                 plotfile.savefig()
             plt.close()
 
