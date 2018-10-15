@@ -11,6 +11,12 @@ def create_dir(dir_to_create):
     except FileExistsError as e:
         print(e)
 
+def create_empty_excelfile(file_name):
+    import pandas as pd
+    pd.DataFrame().to_excel(file_name)
+
+
+
 
 def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie):
     folders = ['alleen cnv/brief gemaakt', 'nagekeken in Cartagenia/brief gemaakt',
@@ -147,7 +153,12 @@ if __name__ == '__main__':
 
         run_command('basemount --unmount {}'.format(BASEMOUNT))
         run_command('cp -r {} {}'.format(SNPCHECKDIR, READS))
-        run_command('cp {} {}'.format(STANDARDFRAGS, READS))
+
+        if not os.path.isfile(STANDARDFRAGS):
+            _, STANDARDFRAGS = os.path.split(STANDARDFRAGS)
+            create_empty_excelfile(os.path.join(READS, STANDARDFRAGS))
+        else:
+            run_command('cp {} {}'.format(STANDARDFRAGS, READS))
 
     if args.pipeline:
         samples = [_[0] for _ in samplesheet_to_sample_genesis('{}/SampleSheet.csv'.format(READS))]

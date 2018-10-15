@@ -195,7 +195,7 @@ rule samplereport:
                 gene, chrom, start, end, *_ = line
                 start = int(start)
                 end = int(end)
-                score = 'Geen standaardfragment'
+                score = ' '
                 for _ in standaard:
                     if not 'chr.' in _:
                         continue
@@ -204,6 +204,8 @@ rule samplereport:
                     st_end = int(_['primer max'])
                     if st_start <= start and st_end >= end and st_chrom == chrom: 
                         score = _['Score']
+                        score = ' '
+
                 out = [gene, chrom, start, end , score]
                 row2, col2 = write_list(out, ws2, row=row2, col=0,
                                         orientation='cols')
