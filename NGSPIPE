@@ -39,6 +39,10 @@ def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie):
     pdone = list()
 
     for s, p in sample_pakket:
+
+        if 'amplicon' in p.lower():
+            continue
+
         pdir = '{}/{}'.format(outputdir, p)
 
         if p not in pdone:
