@@ -11,11 +11,11 @@ def create_dir(dir_to_create):
     except FileExistsError as e:
         print(e)
 
+
 def create_empty_excelfile(file_name):
-    import pandas as pd
-    pd.DataFrame().to_excel(file_name)
-
-
+    from openpyxl import Workbook
+    wb = Workbook()
+    wb.save(file_name)
 
 
 def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie):

@@ -18,5 +18,6 @@ setup(name='NGSPIPE',
       license='MIT',
       scripts=['NGSPIPE'],
       install_requires=['ngsscriptlibrary>=1.0', 
-                        'pycnv>=1.0']
+                        'pycnv>=1.0',
+                        'openpyxl>=2.4.10']
       )
