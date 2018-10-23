@@ -45,4 +45,4 @@ bestaan zoekt snakemake een regel met (een van deze) files als output. Dit gaat
 zo door totdat snakemake een regel vindt waarvoor de inputfiles aanwezig zijn
 en vanaf die regel gaat de workflow van start.
 
-![SnakeGraph](diagnostiek/docs/pipeline.png)
+![SnakeGraph](ngspipeline/pipeline.png)
