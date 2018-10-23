@@ -185,4 +185,4 @@ if __name__ == '__main__':
             run_command('cp {}/reads/*.gz {}/MiSeq/Diagnostiek/MS{}'.format(READS, ARCHIEF, serie))
         finally:
             run_command('cp {}/output/*.xlsx {}/output/*.pdf {}/MiSeq/Diagnostiek/MS{}'.format(READS, READS, ARCHIEF, serie))
-        run_command("rsync -rlzuvP --delete /data/dnadiag/databases/ /mnt/kg_nextgen_archief/ServerDatabaseArchief/")
+        run_command("rsync -rlzuvP /data/dnadiag/databases/ /mnt/kg_nextgen_archief/ServerDatabaseArchief/")
