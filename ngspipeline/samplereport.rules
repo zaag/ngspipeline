@@ -52,7 +52,8 @@ rule samplereport:
         mosapng = rules.createmosaicoutput.output.png,
         mosalctable = rules.createmosaicoutput.output.lc,
         mosavartable = rules.createmosaicoutput.output.var,
-        mosalitvartable = rules.createmosaicoutput.output.litvar
+        mosalitvartable = rules.createmosaicoutput.output.litvar,
+        snpcheck = rules.comparesnpcheckssample.output
 
     output:
         "output/{sample}.xlsx"
