@@ -131,7 +131,7 @@ rule seriereport:
                 if locus not in loci:
                     loci.append(locus)
                 alt_call = snpcheck_sample['ALT'][locus]
-                if alt_call == 'ERROR':
+                if snpcheck_sample['COMP'][locus] == 'ERROR':
                     if sample not in taqmanerror:
                         taqmanerror.append(sample)
                 elif alt_call not in ['WT', 'HET', 'HOM']:
