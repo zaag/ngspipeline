@@ -1,6 +1,9 @@
-__author__ = "Martin Haagmans (https://github.com/zaag)"
+__author__ = "Martin Haagmans (https://github.com/martinhaagmans)"
 __license__ = "MIT"
 
+from ngsscriptlibrary import MetricsDBReader
+from ngsscriptlibrary import standaardfragmenten_dict_sample
+from ngsscriptlibrary import standaardfragmenten_naar_df
 
 def write_list(listname, worksheet, row=0, col=0, skip=1, header=False,
                orientation='rows', format=None, formatheader=None):
@@ -20,57 +23,6 @@ def write_list(listname, worksheet, row=0, col=0, skip=1, header=False,
         row += 1
 
     return (row, col)
-
-
-def get_alignmetrics_fromdb(sampleID):
-    read1 = '''SELECT DISTINCT
-    TOTAL_READS,
-    round(PCT_CHIMERAS*100, 1),
-    round(MEAN_READ_LENGTH, 1),
-    round(PCT_READS_ALIGNED_IN_PAIRS*100, 1)
-    FROM {table}
-    WHERE (CATEGORY = 'FIRST_OF_PAIR'
-    AND sample = '{dnr}'
-    AND serie = '{serie}')
-    '''.format(table='alignment', dnr=sampleID, serie=serie)
-
-    read2 = '''SELECT DISTINCT
-    round(MEAN_READ_LENGTH, 1),
-    round(PCT_READS_ALIGNED_IN_PAIRS*100, 1)
-    FROM {table}
-    WHERE (CATEGORY = 'SECOND_OF_PAIR'
-    AND sample = '{dnr}'
-    AND serie = '{serie}')
-    '''.format(table='alignment', dnr=sampleID, serie=serie)
-
-    conn = sqlite3.connect(METRICSDB)
-    c = conn.cursor()
-
-    c.execute(read1)
-    read1out = [val for tup in c.fetchall() for val in tup]
-
-    c.execute(read2)
-    read2out = [val for tup in c.fetchall() for val in tup]
-    conn.close()
-    return read1out + read2out
-
-
-def get_hsmetrics_fromdb(sampleID):
-    sql = '''SELECT DISTINCT
-    TARGET_TERRITORY,
-    round(PCT_PF_UQ_READS*100),
-    round(PCT_SELECTED_BASES*100)
-    FROM {table}
-    WHERE (sample = '{dnr}'
-    AND serie = '{serienr}')
-    '''.format(table='hsmetrics', dnr=sampleID, serienr=serie)
-
-    conn = sqlite3.connect(METRICSDB)
-    c = conn.cursor()
-    c.execute(sql)
-    out = [val for tup in c.fetchall() for val in tup]
-    conn.close()
-    return out
 
 
 def mean_doc(docfile):
@@ -96,12 +48,12 @@ rule samplereport:
         alignment = rules.alignmetrics.output,
         insertsize = rules.insertsizemetrics.output.tabel,
         hsmetrics = rules.hsmetrics.output,
-        snpcheck = rules.duplicatesnpcheck.output.snpcomp,
         cnvdone = rules.cnvdetection.output,
         mosapng = rules.createmosaicoutput.output.png,
         mosalctable = rules.createmosaicoutput.output.lc,
         mosavartable = rules.createmosaicoutput.output.var,
-        mosalitvartable = rules.createmosaicoutput.output.litvar
+        mosalitvartable = rules.createmosaicoutput.output.litvar,
+        snpcheck = rules.comparesnpcheckssample.output
 
     output:
         "output/{sample}.xlsx"
@@ -111,10 +63,10 @@ rule samplereport:
         db = '{}/metrics.sqlite'.format(config['DB'])
         wb = xlsxwriter.Workbook(output[0])
         wb.set_properties({
-        'title':    wildcards.sample,
-        'subject':  'MiSEQUENCING',
-        'author':   'Martin Haagmans',
-        'comments': 'Created with Python and XlsxWriter'})
+            'title':    wildcards.sample,
+            'subject':  'MiSEQUENCING',
+            'author':   'Martin Haagmans',
+            'comments': 'Created with Python and XlsxWriter'})
         ws1 = wb.add_worksheet('patient + Miseq info')
         ws2 = wb.add_worksheet('low coverage')
         ws3 = wb.add_worksheet('varianten')
@@ -141,7 +93,6 @@ rule samplereport:
         ws3.set_column('J:J', 18)
         ws3.set_column('K:K', 13)
         ws3.set_column('L:L', 25)
-
 
         MISEQ = ['NGS DNA nummer:', 'Sanger DNA nummer:', 'Familienummer:',
                  'Geboortedatum:', 'Geslacht:', 'Diagnose:', 'Samenvatting:']
@@ -176,11 +127,15 @@ rule samplereport:
         VARS2 = ['Paraaf analist.', 'Gen', 'cDNA.', 'gDNA', 'Eiwitverandering',
                  'Exon', 'Chromosoom', 'NM-nummer (RefSeq)',
                  'Genoom versie', 'Pos.Controle1', 'Pos.Controle2',
-                 'Vermelden MLPA kitnr / DL' ]
+                 'Vermelden MLPA kitnr / DL']
+
+        VARS4 = ['Score', 'Over', 'Score', 'Paraaf staf']
 
         SANGER = ['Gen', 'Chr.', 'g.Start', 'g.Eind', 'Resultaat',
                   'Paraaf analist', 'Paraaf staf']
 
+        MR = MetricsDBReader(METRICSDB, wildcards.sample, serie,
+                             input_dict[wildcards.sample]['capture'])
         # First fill in the sample ID
         ws1.write(1, 1, wildcards.sample)
         samenvatting = '''=B4&"("&B2&" + "&B3&"; " &B5&", "&B6&", "&B7&")"'''
@@ -192,8 +147,7 @@ rule samplereport:
         row1, col1 = write_list(SEQRAP, ws1, header='SEQUENCE RAPPORT',
                                 formatheader=headerformat, row=row1, col=col1)
 
-        row1, col1 = write_list(get_alignmetrics_fromdb(wildcards.sample) +
-                                get_hsmetrics_fromdb(wildcards.sample),
+        row1, col1 = write_list(MR.get_alignmetrics() + MR.get_hsmetrics(),
                                 ws1, row=row1 - len(SEQRAP) - 2, col=1)
 
         row1, col1 = write_list(mean_doc(input.doc),
@@ -203,12 +157,19 @@ rule samplereport:
                                 formatheader=headerformat, skip=1, row=row1,
                                 orientation='cols', format=underlined)
 
-        with open(input.snpcheck, 'r') as f:
-            for line in f:
-                line = line.strip()
-                row1, col1 = write_list([x for x in line.split('\t')],
-                                        ws1, row=row1, col=0,
-                                        orientation='cols')
+        snpcheck_data = MR.get_snpcheck()
+        rs_gpos_dict = get_rs_gpos_dict()
+        for locus, result in snpcheck_data['COMP'].items():
+            rsid = rs_gpos_dict[locus]
+            snpcheck_ngs_result = snpcheck_data['NGS'][locus]
+            snpcheck_alt_result = snpcheck_data['ALT'][locus]
+            if snpcheck_alt_result not in ['WT', 'HET', 'HOM']:
+                result = 'NoTaqMan'
+                snpcheck_alt_result = 'NoTaqMan'
+            snpcheck_excel = [locus, rsid, snpcheck_ngs_result, snpcheck_alt_result, result]
+            row1, col1 = write_list(snpcheck_excel,
+                                    ws1, row=row1, col=0,
+                                    orientation='cols')
 
         row1, col1 = write_list(INFO, ws1, header='ANALYSE INFO',
                                 formatheader=headerformat, row=row1 + 2, col=0)
@@ -219,24 +180,42 @@ rule samplereport:
                                 header='NON-CALLABLE SANGER FRAGMENTEN',
                                 skip=3, orientation='cols', format=underlined)
 
-        with open(input.sangers) as f:
-            for line in f:
-                line = line.strip()
-                out = [x for x in line.split('\t')]
-                if 'Geen sangers:' in line:
-                    ws2.set_column('A:A', 26)
-                    [out.append(' ') for _ in range(len(SANGER))]
-                    row2, col2 = write_list(out, ws2, row=row2-1, col=0,
-                                            orientation='cols')
+        sangers = MR.get_sanger_fragments()
+        df_serie = standaardfragmenten_naar_df(standaardfragmenten)
+        standaard = standaardfragmenten_dict_sample(wildcards.sample, df_serie)
 
-                    row2, col2 = write_list([' ', 'Paraaf staf voor gezien: '],
-                                            ws2, row=row2, col=0)
-                else:
-                    row2, col2 = write_list(out[:4], ws2, row=row2, col=0,
-                                            orientation='cols')
+        
+        if 'Geen sangers:' in sangers:
+            ws2.set_column('A:A', 26)
+            sangers = [sangers]
+            [sangers.append(' ') for _ in range(len(SANGER))]
+            row2, col2 = write_list(sangers, ws2, row=row2-1, col=0,
+                                    orientation='cols')
 
-        ws3.write(3,11, 'Paraaf', underlined)
-        ws3.write(4,10, 'Eerste beoordeling: ')
+            row2, col2 = write_list([' ', 'Paraaf staf voor gezien: '],
+                                    ws2, row=row2, col=0)
+        else:
+            for line in sangers:
+                gene, chrom, start, end, *_ = line
+                start = int(start)
+                end = int(end)
+                score = ' '
+                for _ in standaard:
+                    if not 'chr.' in _:
+                        continue
+                    st_chrom = 'chr{}'.format(_['chr.'])
+                    st_start = int(_['primer min'])
+                    st_end = int(_['primer max'])
+                    if st_start <= start and st_end >= end and st_chrom == chrom: 
+                        score = _['Score']
+                        score = ' '
+
+                out = [gene, chrom, start, end , score]
+                row2, col2 = write_list(out, ws2, row=row2, col=0,
+                                        orientation='cols')
+
+        ws3.write(3, 11, 'Paraaf', underlined)
+        ws3.write(4, 10, 'Eerste beoordeling: ')
 
         row3, col3 = write_list(VARS, ws3, formatheader=headerformat,
                                 header='VARIANTEN IN BRIEF',
@@ -249,7 +228,7 @@ rule samplereport:
         for _ in range(12):
             connaisseur_row = int(_) + 4
             connaisseur = '''="chr" & SUBSTITUTE(LOWER(LEFT(A{r},SEARCH("(",A{r},1)-1)), "chr", "") & ":" & MID(A{r}, SEARCH(".",A{r}) + 1,SEARCH(">",A{r}) -  SEARCH(".",A{r}) -2)'''.format(r=connaisseur_row)
-            ws3.write(connaisseur_row -1, 7, connaisseur)
+            ws3.write(connaisseur_row - 1, 7, connaisseur)
             row = row3 - 13
             gennaam = '''=MID(B{r}, SEARCH("(",B{r},1) + 1,( SEARCH(")",B{r},1) -1 - SEARCH("(",B{r},1) ))'''.format(r=row)
             cnotatie = '''=RIGHT(B{r}, LEN(B{r}) - SEARCH(":",B{r},1))'''.format(r=row)
@@ -257,13 +236,22 @@ rule samplereport:
             pnotatie = '''=C{r}'''.format(r=row)
             chromosoom = '''=SUBSTITUTE(LOWER(LEFT(A{r},SEARCH("(",A{r},1)-1)), "chr", "")'''.format(r=row)
             nmnummer = '''=LEFT(B{r},SEARCH("(",B{r},1)-1)'''.format(r=row)
-
             VARS3 = ['', gennaam, cnotatie, gnotatie, pnotatie,  '', chromosoom,
                      nmnummer, 'GRCh37', wildcards.sample]
 
             row3, col3 = write_list(VARS3, ws3, formatheader=headerformat,
                                     header=False, row=row3,
                                     orientation='cols')
+
+        row3, col3 = write_list(VARS4, ws3, formatheader=headerformat,
+                                header='CNV', row=row3 + 2,
+                                orientation='cols', format=underlined)
+        ws3.data_validation(row3, 0, row3+3, 0,
+                            {'validate': 'list',
+                             'source': ['WT', 'NVT', 'AFW', 'NTS']})
+        ws3.data_validation(row3, 2, row3+3, 2,
+                            {'validate': 'list',
+                             'source': ['WT', 'NVT', 'AFW', 'NTS']})
 
         capture = input_dict[wildcards.sample]['capture']
         if input_dict[wildcards.sample]['cnvdiagnostiek']:
@@ -282,9 +270,9 @@ rule samplereport:
             ws4.set_column('G:G', 18)
             ws4.set_column('I:I', 18)
 
-            cnv_calls = 'output/{}/CNV/Calls/{}.txt'.format(capture, wildcards.sample)
-            cnv_archive = 'output/{}/CNV/archive.txt'.format(capture)
-            cnv_excluded = 'output/{}/CNV/excluded.txt'.format(capture)
+            cnv_calls = 'output/CNV_{}/Calls/{}.txt'.format(capture, wildcards.sample)
+            cnv_archive = 'output/CNV_{}/archive.txt'.format(capture)
+            cnv_excluded = 'output/CNV_{}/excluded.txt'.format(capture)
 
             if not os.path.isfile(cnv_calls):
                 row4, col4 = write_list(['Geen calls', '',
@@ -292,12 +280,9 @@ rule samplereport:
                                          'Paraaf staf voor gezien: '], ws4)
                 ws4.set_column('A:A', 35)
 
-
-
-
             elif os.path.isfile(cnv_calls):
-                ws4.write(1,10, 'Paraaf', underlined)
-                ws4.write(2,9, 'Eerste beoordeling: ')
+                ws4.write(1, 10, 'Paraaf', underlined)
+                ws4.write(2, 9, 'Eerste beoordeling: ')
                 with open(cnv_calls, 'r') as f:
                     header = next(f)
                     header = list(header.split())
@@ -310,8 +295,6 @@ rule samplereport:
 
                     for line in f:
                         row4, col4 = write_list(line.split(), ws4, row=row4, orientation='cols')
-
-
 
             with open(cnv_excluded, 'r') as f:
                 header = next(f)
@@ -359,13 +342,9 @@ rule samplereport:
                 row6, col6 = write_list(line.split(), ws6, row=row6,
                                         orientation='cols')
 
-
             row7 = 0
             for line in parse_moza_table(input.mosalctable):
                 row7, col7 = write_list(line.split(), ws7, row=row7,
                                         orientation='cols')
-
-
-
 
         wb.close()

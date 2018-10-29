@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+
 def run_command(command):
     subprocess.call(command, shell=True, stderr=subprocess.STDOUT)
 
@@ -8,12 +9,27 @@ def create_dir(dir_to_create):
     try:
         os.makedirs(dir_to_create)
     except FileExistsError as e:
-        pass
+        print(e)
+
+
+def create_empty_excelfile(file_name):
+    from openpyxl import Workbook
+    wb = Workbook()
+    wb.save(file_name)
 
 
 def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie):
     folders = ['alleen cnv/brief gemaakt', 'nagekeken in Cartagenia/brief gemaakt',
                'CheckJoep', 'negatief/brief gemaakt', 'positief/brief gemaakt']
+
+    cnv_output_dirs = glob.glob('{}/output/CNV_*'.format(workdir))
+
+    for cnv_output_dir in cnv_output_dirs:
+        cnv_dirname = os.path.basename(cnv_output_dir)
+        try:
+            shutil.copytree(cnv_output_dir, os.path.join(outputdir, cnv_dirname))
+        except OSError:
+            pass
 
     shutil.copyfile('{}/output/MS{}_report.xlsx'.format(workdir, serie),
                     '{}/MS{}_report.xlsx'.format(outputdir, serie))
@@ -23,6 +39,10 @@ def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie):
     pdone = list()
 
     for s, p in sample_pakket:
+
+        if 'amplicon' in p.lower():
+            continue
+
         pdir = '{}/{}'.format(outputdir, p)
 
         if p not in pdone:
@@ -38,7 +58,7 @@ def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie):
         report = glob.glob('{}/output/{}*.xlsx'.format(workdir, s))[0]
 
         for f in bam, bai, vcf, idx, report:
-            fb, fn = os.path.split(f)
+            _fb, fn = os.path.split(f)
             if not os.path.isfile('{}/{}/{}'.format(outputdir, p, fn)):
                 fn_base, fn_ext = os.path.splitext(fn)
                 if fn_ext == '.vcf':
@@ -52,7 +72,6 @@ def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie):
 
 if __name__ == '__main__':
     import os
-    import csv
     import glob
     import shutil
     import argparse
@@ -61,13 +80,15 @@ if __name__ == '__main__':
     from ngsscriptlibrary import samplesheet_to_sample_genesis
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-s", "--serie", type=str,
+    parser.add_argument("-s", "--serie", type=str, metavar='',
                         help="Miseq serie nummer", required=True)
-    parser.add_argument("-t", "--threads", type=int, default=10,
+    parser.add_argument("--samplesheet", type=str, metavar='',
+                        help="Sample sheet (afwijkend van BaseSpace)")
+    parser.add_argument("-t", "--threads", type=int, default=10, metavar='',
                         help="Number of threads for snakemake")
     parser.add_argument("-p", "--pipeline", action='store_true',
                         help="Only run the pipeline")
-    parser.add_argument("-r", "--rule", default='END',
+    parser.add_argument("-r", "--rule", default='END', metavar='',
                         help="Ask snakemake to run specific rule")
     parser.add_argument("--download", action='store_true',
                         help="Download reads from basespace")
@@ -75,6 +96,8 @@ if __name__ == '__main__':
                         help="Move data to archive")
     parser.add_argument("--hester", action='store_true',
                         help="Run is rehybed @ MiSeq")
+    parser.add_argument("--project", nargs='?', default=False, const='2',
+                        help="Run is re-analyzed @ BaseSpace")
 
     args = parser.parse_args()
 
@@ -82,6 +105,8 @@ if __name__ == '__main__':
     threads = args.threads
     rule = args.rule
     bserie = serie
+    project = args.project
+
     if args.hester:
         bserie = r'{}\ \(2\)'.format(serie)
 
@@ -92,13 +117,20 @@ if __name__ == '__main__':
 
     BASEDIR = "/data/dnadiag/reads"
     ARCHIEF = "/mnt/kg_nextgen_archief/IlluminaRawData/"
-    SCRIPTHOME = os.path.dirname(os.path.realpath(__file__))
-    CONFIG = os.path.join(SCRIPTHOME, 'diagnostiek', 'docs', 'config.yaml')
+    SCRIPTHOME = '/data/dnadiag/ngspipeline/'
+    CONFIG = os.path.join(SCRIPTHOME, 'ngspipeline', 'config.yaml')
     READS = os.path.join(BASEDIR, 'MS{}'.format(serie))
     BASEMOUNT = os.path.join(BASEDIR, 'basespace')
-    SAMPLESHEET = os.path.join(BASEMOUNT, 'Runs', bserie, 'Files', 'SampleSheet.csv')
     SERIEDIR = os.path.join('/', 'mnt', 'ngs', 'Analyse*MiSEQ', 'MiSeq*Serie*{}*'.format(serie))
     SNPCHECKDIR = os.path.join(SERIEDIR, 'SNPcheck')
+    STANDARDFRAGS_FILESTRING = 'MISEQ{} std fragmenten.xlsm'.format(serie)
+    STANDARDFRAGS = os.path.join(SERIEDIR, 'MISEQ{}*std*fragmenten.xlsm'.format(serie))
+    
+
+    if args.samplesheet:
+        SAMPLESHEET = args.samplesheet
+    else:
+        SAMPLESHEET = os.path.join(BASEMOUNT, 'Runs', bserie, 'Files', 'SampleSheet.csv')
 
     for _ in glob.iglob('{}/*'.format(SERIEDIR)):
         if _.endswith('Data-analyse'):
@@ -107,8 +139,12 @@ if __name__ == '__main__':
     if args.download:
         os.mkdir(READS)
         run_command('basemount {} -c ormook'.format(BASEMOUNT))
-        run_command('cp -r {}/basespace/Projects/{}/Samples/*/Files/*.gz {}'.format(BASEDIR, serie, READS))
-        run_command('cp {} {}'.format(SAMPLESHEET, READS))
+        if args.project:
+            run_command(r'cp -r {}/basespace/Projects/{}/Samples/*\({}\)/Files/*.gz {}'.format(BASEDIR, serie, project, READS))
+        else:
+            run_command('cp -r {}/basespace/Projects/{}/Samples/*/Files/*.gz {}'.format(BASEDIR, serie, READS))
+        run_command('cp {} {}/SampleSheet.csv'.format(SAMPLESHEET, READS))
+
 
         try:
             os.mkdir('{}/MiSeqRunMetrics/{}'.format(ARCHIEF, serie))
@@ -123,6 +159,12 @@ if __name__ == '__main__':
         run_command('basemount --unmount {}'.format(BASEMOUNT))
         run_command('cp -r {} {}'.format(SNPCHECKDIR, READS))
 
+        if not os.path.isfile(STANDARDFRAGS):
+            _, STANDARDFRAGS = os.path.split(STANDARDFRAGS)
+            create_empty_excelfile(os.path.join(READS, STANDARDFRAGS_FILESTRING))
+        else:
+            run_command('cp {} {}'.format(STANDARDFRAGS, READS))
+
     if args.pipeline:
         samples = [_[0] for _ in samplesheet_to_sample_genesis('{}/SampleSheet.csv'.format(READS))]
         for sample in samples:
@@ -130,7 +172,7 @@ if __name__ == '__main__':
             if not os.path.isfile(snpcheckfile):
                 run_command('touch {}'.format(snpcheckfile))
 
-        run_command('snakemake -s {}/diagnostiek/Snakefile -j{} --configfile {} --directory {} -R {}'.format(SCRIPTHOME, threads, CONFIG, READS, rule))
+        run_command('snakemake --rerun-incomplete -s {}/ngspipeline/Snakefile -j{} --configfile {} --directory {} -R {}'.format(SCRIPTHOME, threads, CONFIG, READS, rule))
 
     if args.cleanup:
         samples = samplesheet_to_sample_genesis('{}/SampleSheet.csv'.format(READS))
@@ -141,3 +183,6 @@ if __name__ == '__main__':
             print(e)
         else:
             run_command('cp {}/reads/*.gz {}/MiSeq/Diagnostiek/MS{}'.format(READS, ARCHIEF, serie))
+        finally:
+            run_command('cp {}/output/*.xlsx {}/output/*.pdf {}/MiSeq/Diagnostiek/MS{}'.format(READS, READS, ARCHIEF, serie))
+        run_command("rsync -rlzuvP /data/dnadiag/databases/ /mnt/kg_nextgen_archief/ServerDatabaseArchief/")

@@ -13,18 +13,25 @@ import sqlite3
 import subprocess
 
 import vcf
-import xlsxwriter
 import matplotlib
+import xlsxwriter
 import numpy as np
 import pandas as pd
 
 from ngsscriptlibrary.parsing import *
 
-from ngsscriptlibrary import sample_in_db
 from ngsscriptlibrary import metrics2db
-from ngsscriptlibrary import perc_target_covered2db
 from ngsscriptlibrary import summary2db
+from ngsscriptlibrary import sangers2db
+from ngsscriptlibrary import sample_in_db
+from ngsscriptlibrary import base_perc_reads2db
 from ngsscriptlibrary import samplesheetinfo2db
+from ngsscriptlibrary import perc_target_covered2db
+from ngsscriptlibrary import parse_sangers_for_seriereport
+from ngsscriptlibrary import snpcheck2db
+from ngsscriptlibrary import get_snpcheck_serie
+from ngsscriptlibrary import compare_snpchecks
+from ngsscriptlibrary import get_rs_gpos_dict
 
 matplotlib.use('Agg')
 
@@ -36,16 +43,16 @@ PICARD = config["PICARD"]
 TARGETREPO = config["TARGET"]
 DBREPO = config['DB']
 JAVA = config['JAVA']
-pyCNV = config['pyCNV']
 
 # Define files
 TARGETDB = os.path.join(TARGETREPO, 'varia', 'captures.sqlite')
-METRICSDB = os.path.join(DBREPO, 'metrics.sqlite')
-SAMPLEDB = os.path.join(DBREPO, 'samplesheets.sqlite')
-SOMOSADB = os.path.join(DBREPO, 'SO.mosaic.sqlite')
 SNPCHECK = os.path.join(TARGETREPO, 'varia', 'NGS-SNPcheck.vcf')
-samplesheet = 'SampleSheet.csv'
+METRICSDB = os.path.join(DBREPO, 'metrics.sqlite')
+SOMOSADB = os.path.join(DBREPO, 'SO.mosaic.sqlite')
+SAMPLEDB = os.path.join(DBREPO, 'samplesheets.sqlite')
 
+
+samplesheet = 'SampleSheet.csv'
 
 def get_file_locations(todo, targetrepo):
     """Read dict with targets and analyses and add correct file locations.
@@ -120,21 +127,21 @@ def create_recalinput_file(samples):
 
 
 # Get todo list for samples
-input_dict = parse_samplesheet_for_pipeline(samplesheet, TARGETDB)
+input_dict = parse_samplesheet_for_pipeline(samplesheet, TARGETDB, ['Amplicon', 'Amplicons'])
 input_dict = get_file_locations(input_dict, TARGETREPO)
 captures = get_captures(input_dict)
 pakketten = get_pakketten(input_dict)
 samples = input_dict.keys()
 serie = [input_dict[_]['serie'] for _ in input_dict.keys()][0]
+standaardfragmenten = 'MISEQ{} std fragmenten.xlsm'.format(serie)
 
 
 # Rules for snakemake
 onsuccess:
     shell("if [ -f recalinput.list ]; then rm -f recalinput.list ; fi ;")
-    shell("if [ -d picardmetrics ]; then rmdir picardmetrics ; fi ;")
-    shell("if [ -d gatkfiles ]; then rmdir gatkfiles ; fi ;")
-    shell("if [ -d alignments ]; then rmdir alignments ; fi ;")
-
+    shell("if [ -z '$(ls -A picardmetrics)' ]; then rmdir picardmetrics ; fi ;")
+    shell("if [ -z '$(ls -A gatkfiles)'  ]; then rmdir gatkfiles ; fi ;")
+    shell("if [ -z '$(ls -A alignments)'  ]; then rmdir alignments ; fi ;")
 
 rule prepare:
     input:
@@ -154,13 +161,22 @@ rule prepare:
 
 rule countbases:
     input:
-        expand("reads/{sample}.R1.fastq.gz", sample=samples)
+        fq = "reads/{sample}.R1.fastq.gz"
     output:
+<<<<<<< HEAD:ngspipeline/Snakefile
+        "gatkfiles/{sample}.basepercentages.done"
+=======
         "gatkfiles/BasePercentages.txt"
+>>>>>>> master:diagnostiek/Snakefile
     message:
-        "Calculating per base percentage for each R1"
+        "Calculating per base percentage"
     run:
-        get_base_count_filelist(output[0], input)
+        if sample_in_db(wildcards.sample, serie, METRICSDB, 'basepercentages'):
+            shell("touch {output}")
+        elif not sample_in_db(wildcards.sample, serie, METRICSDB, 'basepercentages'):
+            counts = get_basecounts(input.fq)
+            base_perc_reads2db(wildcards.sample, serie, counts, METRICSDB)
+            shell("touch {output}")
 
 
 rule mapreads:
@@ -299,19 +315,21 @@ rule callableloci:
     log:
         "logfiles/{sample}.CallableLoci.log"
     run:
-        target = input_dict[wildcards.sample]['sanger']
-
-        shell('''{JAVA} -jar {GATK} -R {REF} -T CallableLoci \
-        -minDepth 30 -mdflmq 30 -mmq 20 -frlmq 0.6 -mlmq 10 \
-        -I {input.bam} -o {output.bed} \
-        -summary {output.summary}  \
-        -L {target} --BQSR {input.table} > {log} 2>&1''')
-        if input_dict[wildcards.sample]['panel'] is None:
-            db_targetname = input_dict[wildcards.sample]['pakket']
+        if sample_in_db(wildcards.sample, serie, METRICSDB, 'sangers'):
+            shell('touch {output.summary} {output.bed}')
         else:
-            db_targetname = input_dict[wildcards.sample]['panel']
-        summary2db(wildcards.sample, read_summary(output.summary),
-                   db_targetname, serie, METRICSDB)
+            target = input_dict[wildcards.sample]['sanger']
+            shell('''{JAVA} -jar {GATK} -R {REF} -T CallableLoci \
+            -minDepth 30 -mdflmq 30 -mmq 20 -frlmq 0.6 -mlmq 10 \
+            -I {input.bam} -o {output.bed} \
+            -summary {output.summary}  \
+            -L {target} --BQSR {input.table} > {log} 2>&1''')
+            if input_dict[wildcards.sample]['panel'] is None:
+                db_targetname = input_dict[wildcards.sample]['pakket']
+            else:
+                db_targetname = input_dict[wildcards.sample]['panel']
+            summary2db(wildcards.sample, read_summary(output.summary),
+                       db_targetname, serie, METRICSDB)
 
 
 rule getsangers:
@@ -320,31 +338,36 @@ rule getsangers:
     output:
         sangers = "gatkfiles/{sample}.sangers.txt",
         tempbed = temp("gatkfiles/{sample}.tmp.bed")
-
     message:
         "Defining sangerfragments from callable regions"
-
     run:
         annot_bed = input_dict[wildcards.sample]['annot']
         panel = input_dict[wildcards.sample]['panel']
-        if panel is not None and 'OVR' in panel:
-            with open(output.sangers, 'w') as f:
-                f.write('Geen sangers: OVR panel')
-            shell("touch {output.tempbed}")
+        if panel is None:
+            target_name = input_dict[wildcards.sample]['pakket']
+        elif panel is not None:
+            target_name = panel
+        sangers_for_db = list()
+        if sample_in_db(wildcards.sample, serie, METRICSDB, 'sangers'):
+            pass
+        elif panel is not None and 'OVR' in panel:
+            sangers_for_db = 'Geen sangers: OVR panel'
+            sangers2db(sangers_for_db, serie, wildcards.sample, target_name, METRICSDB)
         else:
             df = annotate_callables(input, annot_bed, output.tempbed)
             sangercount = 0
-            with open(output.sangers, 'w') as f:
-                for target, data in df.groupby(df.index):
-                    if len(data[data['callable'] != 'CALLABLE']) > 0:
-                        sangercount += 1
-                        gene = ' '.join(data['gene'].unique())
-                        start = data[data['callable'] != 'CALLABLE']['regionstart'].min()
-                        end = data[data['callable'] != 'CALLABLE']['regionend'].max()
-                        f.write('{}\t{}\t{}\t{}\t{}\t{}\n'.format(
-                            gene, target[0], start, end, target[1], target[2]))
-                if sangercount == 0:
-                    f.write('Geen sangers: alles callable')
+            for target, data in df.groupby(df.index):
+                if len(data[data['callable'] != 'CALLABLE']) > 0:
+                    sangercount += 1
+                    gene = ' '.join(data['gene'].unique())
+                    start = data[data['callable'] != 'CALLABLE']['regionstart'].min()
+                    end = data[data['callable'] != 'CALLABLE']['regionend'].max()
+                    sangers_for_db.append((gene, target[0], str(start), str(end),
+                                           str(target[1]), str(target[2])))
+            if sangercount == 0:
+                sangers_for_db = 'Geen sangers: alles callable'
+            sangers2db(sangers_for_db, serie,  wildcards.sample, target_name, METRICSDB)
+        shell("touch {output.sangers} {output.tempbed}")
 
 
 rule depthofcoverage:
@@ -436,11 +459,15 @@ rule callsnpcheck:
         "Calling SNP checks sample"
     log:
         "logfiles/{sample}.CallSNPcheck.log"
-    shell:
-        '''{JAVA} -jar {GATK} -R {REF} -T HaplotypeCaller \
-        -I {input} -o {output.vcf} -L {SNPCHECK} -alleles {SNPCHECK} \
-        -gt_mode GENOTYPE_GIVEN_ALLELES -GQB 0 > {log} 2>&1
-        '''
+    run:
+        if sample_in_db(wildcards.sample, serie, METRICSDB, 'snpcheck'):
+            shell('touch {output.vcf} {output.index}')  
+        elif not sample_in_db(wildcards.sample, serie, METRICSDB, 'snpcheck'):
+            shell('''{JAVA} -jar {GATK} -R {REF} -T HaplotypeCaller \
+                -I {input} -o {output.vcf} -L {SNPCHECK} -alleles {SNPCHECK} \
+                -gt_mode GENOTYPE_GIVEN_ALLELES -GQB 0 > {log} 2>&1
+                ''')
+            
 
 
 rule comparesnpcheckssample:
@@ -448,14 +475,24 @@ rule comparesnpcheckssample:
         vcf = rules.callsnpcheck.output.vcf,
         alt = "SNPcheck/{sample}.qpcrsnpcheck"
     output:
-        ngs = temp("SNPcheck/{sample}.snpcheck.ngsextra.txt"),
-        comp = temp("SNPcheck/{sample}.snpcheck.comp.temp")
-
+        temp("SNPcheck/{sample}.snpcheck.done.txt")
     message:
         "Comparing SNP checks sample"
     log:
         "logfiles/{sample}.CompareSNPcheck.log"
     run:
+<<<<<<< HEAD:ngspipeline/Snakefile
+        if sample_in_db(wildcards.sample, serie, METRICSDB, 'snpcheck'):
+            shell('touch {output}')
+        else:
+            store_in_db = dict()
+            store_in_db['NGS'] = parse_ngssnpcheck(input.vcf)
+            store_in_db['ALT'] = parse_taqman(input.alt)
+            store_in_db['COMP'] = compare_snpchecks(store_in_db['ALT'], store_in_db['NGS'])
+            store_in_db_json = json.dumps(store_in_db)
+            snpcheck2db(wildcards.sample, serie, store_in_db_json, METRICSDB)
+            shell('touch {output}')
+=======
         sd = parse_taqman(input.alt)
         ngsd = parse_ngssnpcheck(input.vcf)
         snpout = compare_snpchecks(sd, ngsd)
@@ -543,6 +580,7 @@ rule duplicatesnpcheck:
                 line.strip()
                 if wildcards.sample in line:
                     print_extra_ngscalls(output.snpcomp, input.extrangs)
+>>>>>>> master:diagnostiek/Snakefile
 
 
 rule addcnvdata:
@@ -557,7 +595,11 @@ rule addcnvdata:
     run:
         if input_dict[wildcards.sample]['cnvscreening']:
             target = input_dict[wildcards.sample]['capture']
+<<<<<<< HEAD:ngspipeline/Snakefile
+            shell("CNV -c {target} -s {serie} -n {input} --sample {wildcards.sample} --addonly > {log} 2>&1")
+=======
             shell("CNV --analyse -c {target} -s {serie} -n {input} --sample {wildcards.sample} --addonly > {log} 2>&1")
+>>>>>>> master:diagnostiek/Snakefile
             shell("touch {output}")
         else:
             shell("touch {output}")
@@ -576,26 +618,30 @@ rule cnvdetection:
         for capture in captures:
             screening = False
             for s in samples:
-                workdir = os.path.join(os.getcwd(), 'output', capture, 'CNV')
+                workdir = os.path.join(os.getcwd(), 'output', 'CNV_{}'.format(capture))
                 if input_dict[s]['capture'] == capture:
                     screening = input_dict[s]['cnvscreening']
             if screening:
                 os.makedirs(workdir, exist_ok=True)
+<<<<<<< HEAD:ngspipeline/Snakefile
+                shell("CNV -c {capture} -s {serie} -o {workdir} > {log} 2>&1")
+=======
                 shell("CNV --analyse -c {capture} -s {serie} -o {workdir} > {log} 2>&1")
+>>>>>>> master:diagnostiek/Snakefile
         shell("touch {output}")
 
 
 include:
-    'docs/callmosaic.rules'
+    'callmosaic.rules'
 
 include:
-    'docs/samplereport.rules'
+    'samplereport.rules'
 
 include:
-    'docs/seriereport.rules'
+    'seriereport.rules'
 
 include:
-    'docs/qcplots.rules'
+    'qcplots.rules'
 
 
 rule END:

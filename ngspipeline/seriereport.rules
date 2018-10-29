@@ -1,0 +1,166 @@
+__author__ = "Martin Haagmans (https://github.com/martinhaagmans)"
+__license__ = "MIT"
+
+
+def write_list(listname, worksheet, row=0, col=0, skip=1, header=False,
+               orientation='rows', format=None, formatheader=None):
+    if header:
+        worksheet.write(row, col, header, formatheader)
+        row += skip
+
+    if orientation == 'rows':
+        [worksheet.write(row + i, col, ii, format)
+         for i, ii in enumerate(listname)]
+        row = row + len(listname) + 2
+
+    elif orientation == 'cols':
+        [worksheet.write(row, col + i, ii, format)
+         for i, ii in enumerate(listname)]
+        col = col + len(listname) + 2
+        row += 1
+
+    return (row, col)
+
+
+rule seriereport:
+    input:
+        samplereports = expand(rules.samplereport.output, sample=samples),
+        sangers = expand(rules.getsangers.output.sangers, sample=samples),
+        snpchecks = expand(rules.comparesnpcheckssample.output, sample=samples)
+
+    output:
+        "output/MS{}_report.xlsx".format(serie)
+    message:
+        "Creating excel file for serie."
+    run:
+        import glob
+        from ngsscriptlibrary import MetricsDBReader
+        from ngsscriptlibrary import compare_snpchecks_serie
+        db = METRICSDB
+        writer = pd.ExcelWriter(output[0], engine='xlsxwriter')
+        wb = writer.book
+        wb.set_properties({
+            'title': serie,
+            'subject': 'MiSEQUENCING',
+            'author': 'Martin Haagmans',
+            'comments': 'Created with Python and XlsxWriter'})
+        ws1 = wb.add_worksheet('Metrics')
+
+        headerformat = wb.add_format()
+        headerformat.set_font_size(16)
+
+        underlined = wb.add_format()
+        underlined.set_bottom()
+
+        INFO = ['Sample', 'Pakket', 'TypeA', 'R1', 'R2', '% PF UQ',
+                '% OnTarget', 'Mean', '% > 30x']
+
+        row1, col1 = write_list(INFO, ws1, format=underlined,
+                                orientation='cols')
+
+        for dnr in samples:
+            MR = MetricsDBReader(db, dnr, serie, input_dict[dnr]['capture'])
+            pakket = input_dict[dnr]['pakket']
+            panel = input_dict[dnr]['panel']
+            if input_dict[dnr]['panel'] is None:
+                perctargetcovered = 'nvt'
+            elif input_dict[dnr]['panel'] is not None:
+                perctargetcovered = MR.get_perc_target_covered(pakket)
+
+            metrics_alignment = MR.get_alignmetrics_for_seriereport()
+            metrics_hs = MR.get_hsmetrics_for_seriereport()
+            picard_data = metrics_alignment + metrics_hs
+            row1, col1 = write_list([dnr, pakket, panel]
+                                    + picard_data
+                                    + [perctargetcovered],
+                                    ws1, row=row1, orientation='cols')
+
+        df, failed = parse_sangers_for_seriereport(serie, db)
+
+        if df.empty:
+            ws2 = wb.add_worksheet('Sangers')
+            row2, col2 = write_list(['Geen sangers'], ws2, orientation='cols')
+
+        else:
+            df = df.reset_index()
+            df.drop(['target_start', 'target_end'], inplace=True, axis=1)
+            gene_column = df['gen']
+            df.drop(labels=['gen'], axis=1, inplace=True)
+            df.insert(0, 'gen', gene_column)
+
+            df.to_excel(writer, 'Sangers', header=False, index=False,
+                        startrow=1, startcol=0)
+
+            ws2 = writer.sheets['Sangers']
+            ws2.set_column('F:Z', 20)
+            row2, col2 = write_list(['gen', 'chrom', 'min', 'max', 'size', 'patients'], 
+                                    ws2, row=0, orientation='cols', format=underlined)
+
+        row1 += 2
+
+        if failed:
+            ws1.write(row1, 0,
+                      'De volgende patiënten hebben >50 sangers: {}'.format(' '.join(failed)))
+            row1 += 1
+
+        snpcheck_serie = get_snpcheck_serie(serie, db)
+        duplicate_check = compare_snpchecks_serie(snpcheck_serie)
+        duplicate_snpcheck_samples = list()
+
+        for calls, sample in duplicate_check.items():
+            if len(sample) > 1:
+                duplicate_snpcheck_samples.append(tuple(_ for _ in sample))
+
+        if not duplicate_snpcheck_samples :
+            ws1.write(row1, 0, 'Alle NGS-SNPchecks zijn uniek')
+            row1 += 1
+
+        elif duplicate_snpcheck_samples:
+            for _ in duplicate_snpcheck_samples:
+                ws1.write(row1, 0,
+                          'De volgende patiënten hebben dezelfde SNPcheck: {}'.format(' '.join(_)))
+                row1 += 1
+
+        loci = list()
+        notaqman = list()
+        taqmanerror = list()
+
+        for sample, snpcheck_sample in snpcheck_serie.items():
+            count = 0
+            for locus in sorted(snpcheck_sample['COMP'].keys()):
+                if locus not in loci:
+                    loci.append(locus)
+                alt_call = snpcheck_sample['ALT'][locus]
+                if snpcheck_sample['COMP'][locus] == 'ERROR':
+                    if sample not in taqmanerror:
+                        taqmanerror.append(sample)
+                elif alt_call not in ['WT', 'HET', 'HOM']:
+                    count += 1
+            if count > 2:
+               notaqman.append(sample)
+            
+        if notaqman:
+            ws1.write(row1, 0, 'De volgende patiënten hebben onvoldoende TaqMan calls: {}'.format(' '.join(notaqman)))
+            row1 += 1
+
+        if taqmanerror:
+            ws1.write(row1, 0, 'De volgende patiënten hebben afwijkende TaqMan calls: {}'.format(' '.join(taqmanerror)))
+            row1 += 1
+
+        rs2gpos = get_rs_gpos_dict()
+        
+        row1 += 1
+
+        row1, col1 = write_list(['locus'] + sorted(loci), 
+                               ws1, row=row1, orientation='cols', col=0)
+
+        row1, col1 = write_list(['rsid'] + [rs2gpos[locus] for locus in sorted(loci)], 
+                               ws1, row=row1, orientation='cols', col=0)
+
+        for sample, data in snpcheck_serie.items():
+            row1, col1 = write_list([sample] + [data['COMP'][locus] for locus in sorted(loci)], 
+                                    ws1, row=row1, orientation='cols', col=0)
+
+        ws1.set_column('A:Z', 18)
+
+        wb.close()
