@@ -348,7 +348,7 @@ rule getsangers:
             pass
         elif panel is not None and 'OVR' in panel:
             sangers_for_db = 'Geen sangers: OVR panel'
-            sangers2db(sangers_for_db, wildcards.sample, serie, target_name, METRICSDB)
+            sangers2db(sangers_for_db, serie, wildcards.sample, target_name, METRICSDB)
         else:
             df = annotate_callables(input, annot_bed, output.tempbed)
             sangercount = 0
