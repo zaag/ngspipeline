@@ -163,11 +163,7 @@ rule countbases:
     input:
         fq = "reads/{sample}.R1.fastq.gz"
     output:
-<<<<<<< HEAD:ngspipeline/Snakefile
         "gatkfiles/{sample}.basepercentages.done"
-=======
-        "gatkfiles/BasePercentages.txt"
->>>>>>> master:diagnostiek/Snakefile
     message:
         "Calculating per base percentage"
     run:
@@ -481,7 +477,6 @@ rule comparesnpcheckssample:
     log:
         "logfiles/{sample}.CompareSNPcheck.log"
     run:
-<<<<<<< HEAD:ngspipeline/Snakefile
         if sample_in_db(wildcards.sample, serie, METRICSDB, 'snpcheck'):
             shell('touch {output}')
         else:
@@ -492,95 +487,6 @@ rule comparesnpcheckssample:
             store_in_db_json = json.dumps(store_in_db)
             snpcheck2db(wildcards.sample, serie, store_in_db_json, METRICSDB)
             shell('touch {output}')
-=======
-        sd = parse_taqman(input.alt)
-        ngsd = parse_ngssnpcheck(input.vcf)
-        snpout = compare_snpchecks(sd, ngsd)
-        rsid_to_locus = get_rs_gpos_dict()
-
-        with open(output.comp, 'w') as f:
-            for k, v in snpout.items():
-                try:
-                    ngsresult = ngsd[k]
-                except KeyError:
-                    ngsresult = 'NoNGS'
-
-                out = ("{loc}\t{rs}\t{ngs}\t{sang}\t{result}\n"
-                      .format(loc=k, rs=rsid_to_locus[k],
-                              ngs=ngsresult, sang=sd[k],
-                              result=v))
-                f.write(out)
-
-            if not snpout:
-                for k, v in ngsd.items():
-                    try:
-                        rsid = rsid_to_locus[k]
-                    except KeyError as e:
-                        rsid = 'NGS-only'
-                    else:
-                        out = ("{loc}\t{rs}\t{ngs}\tNoTaqMan\tNoTaqMan\n"
-                              .format(loc=k, rs=rsid,
-                                      ngs=v)
-                              )
-                        f.write(out)
-
-
-        with open(output.ngs, 'w') as f:
-            [f.write('{loc}\tonbekend\t{ngs}\n'.format(loc=k, ngs=v))
-             for k, v in ngsd.items() if k not in sd.keys()]
-
-
-rule comparesnpchecksserie:
-    input:
-        expand(rules.comparesnpcheckssample.output.comp, sample=samples)
-    output:
-        temp("SNPcheck/duplicate.snpcheck.txt")
-    message:
-        "Comparing SNP checks serie"
-    log:
-        "logfiles/SNPcheckCompare.log"
-    run:
-        from collections import defaultdict
-        df = pd.concat(
-            [pd.read_csv(f, sep='\t', header=None, usecols=[0, 2],
-             names=['locus', f.split('/')[-1].split('.')[0]],
-             index_col='locus')
-                for f in input],
-            axis=1)
-        # key = string of calls, value = dnr --> >1 value = double SNP check
-        d = defaultdict(list)
-        for col in df:
-            x = str(df[col].values)
-            d[x].append(col)
-
-        with open(output[0], 'w') as f:
-            for k, v in d.items():
-                if len(v) > 1:
-                    f.write(' '.join(v))
-
-
-rule duplicatesnpcheck:
-    input:
-        serie = rules.comparesnpchecksserie.output,
-        sample = rules.comparesnpcheckssample.output.comp,
-        extrangs = rules.comparesnpcheckssample.output.ngs
-
-    output:
-        snpcomp = "SNPcheck/{sample}.snpcheck.comp.txt"
-
-    message:
-        "Creating SNPcheck output"
-    log:
-        "logfiles/SNPcheckCompare.log"
-    run:
-        import os
-        os.rename(str(input.sample), str(output.snpcomp))
-        with open(input.serie[0], 'r') as f:
-            for line in f:
-                line.strip()
-                if wildcards.sample in line:
-                    print_extra_ngscalls(output.snpcomp, input.extrangs)
->>>>>>> master:diagnostiek/Snakefile
 
 
 rule addcnvdata:
@@ -595,11 +501,7 @@ rule addcnvdata:
     run:
         if input_dict[wildcards.sample]['cnvscreening']:
             target = input_dict[wildcards.sample]['capture']
-<<<<<<< HEAD:ngspipeline/Snakefile
             shell("CNV -c {target} -s {serie} -n {input} --sample {wildcards.sample} --addonly > {log} 2>&1")
-=======
-            shell("CNV --analyse -c {target} -s {serie} -n {input} --sample {wildcards.sample} --addonly > {log} 2>&1")
->>>>>>> master:diagnostiek/Snakefile
             shell("touch {output}")
         else:
             shell("touch {output}")
@@ -623,11 +525,7 @@ rule cnvdetection:
                     screening = input_dict[s]['cnvscreening']
             if screening:
                 os.makedirs(workdir, exist_ok=True)
-<<<<<<< HEAD:ngspipeline/Snakefile
                 shell("CNV -c {capture} -s {serie} -o {workdir} > {log} 2>&1")
-=======
-                shell("CNV --analyse -c {capture} -s {serie} -o {workdir} > {log} 2>&1")
->>>>>>> master:diagnostiek/Snakefile
         shell("touch {output}")
 
 
