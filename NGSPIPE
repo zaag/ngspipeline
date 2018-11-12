@@ -166,7 +166,8 @@ if __name__ == '__main__':
             run_command('cp {} {}'.format(STANDARDFRAGS, READS))
 
     if args.pipeline:
-        samples = [_[0] for _ in samplesheet_to_sample_genesis('{}/SampleSheet.csv'.format(READS))]
+        samples = [_[0] for _ in samplesheet_to_sample_genesis('{}/SampleSheet.csv'.format(READS)) if not 'amplicon' in _[0].lower()]
+        
         for sample in samples:
             snpcheckfile = os.path.join(READS, 'SNPcheck', '{}.qpcrsnpcheck'.format(sample))
             if not os.path.isfile(snpcheckfile):
