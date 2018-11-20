@@ -159,7 +159,7 @@ if __name__ == '__main__':
         run_command('basemount --unmount {}'.format(BASEMOUNT))
         run_command('cp -r {} {}'.format(SNPCHECKDIR, READS))
 
-        if not os.path.isfile(STANDARDFRAGS):
+        if not os.path.isfile(glob.glob(STANDARDFRAGS)[0]):
             _, STANDARDFRAGS = os.path.split(STANDARDFRAGS)
             create_empty_excelfile(os.path.join(READS, STANDARDFRAGS_FILESTRING))
         else:
