@@ -137,8 +137,21 @@ if __name__ == '__main__':
             OUTPUTDIR = _
 
     if args.download:
+        
         os.mkdir(READS)
+
+        try:
+            glob.glob(STANDARDFRAGS)[0]
+        except IndexError:
+            _, STANDARDFRAGS = os.path.split(STANDARDFRAGS)
+            create_empty_excelfile(os.path.join(READS, STANDARDFRAGS_FILESTRING))
+        else:
+            run_command('cp {} {}'.format(STANDARDFRAGS, READS))
+
+        run_command('cp -r {} {}'.format(SNPCHECKDIR, READS))
+
         run_command('basemount {} -c ormook'.format(BASEMOUNT))
+
         if args.project:
             run_command(r'cp -r {}/basespace/Projects/{}/Samples/*\({}\)/Files/*.gz {}'.format(BASEDIR, serie, project, READS))
         else:
@@ -157,13 +170,6 @@ if __name__ == '__main__':
             run_command('cp {} {}/MiSeqRunMetrics/{}'.format(SAMPLESHEET, ARCHIEF, serie))
 
         run_command('basemount --unmount {}'.format(BASEMOUNT))
-        run_command('cp -r {} {}'.format(SNPCHECKDIR, READS))
-
-        if not os.path.isfile(glob.glob(STANDARDFRAGS)[0]):
-            _, STANDARDFRAGS = os.path.split(STANDARDFRAGS)
-            create_empty_excelfile(os.path.join(READS, STANDARDFRAGS_FILESTRING))
-        else:
-            run_command('cp {} {}'.format(STANDARDFRAGS, READS))
 
     if args.pipeline:
         samples = [_[0] for _ in samplesheet_to_sample_genesis('{}/SampleSheet.csv'.format(READS)) if not 'amplicon' in _[0].lower()]
