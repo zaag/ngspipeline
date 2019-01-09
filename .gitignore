@@ -10,3 +10,4 @@ recalinput.list
 reads/
 SampleSheet.csv
 config.yaml
+.vscode/settings.json
