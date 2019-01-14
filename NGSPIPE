@@ -124,7 +124,7 @@ if __name__ == '__main__':
     parser.add_argument("--hester", action='store_true',
                         help="Run is rehybed @ MiSeq")
     parser.add_argument("--project", nargs='?', default=False, const='2',
-                        help="Run is re-analyzed @ BaseSpace")
+                        metavar = '2', help="Run is re-analyzed @ BaseSpace")
     parser.add_argument("--niek", action='store_true',
                         help="Remove serie from databases")                        
 
