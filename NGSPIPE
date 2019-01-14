@@ -18,6 +18,33 @@ def create_empty_excelfile(file_name):
     wb.save(file_name)
 
 
+def read_config_json(file_name):
+    with open(file_name) as f:
+        return json.load(f)
+
+
+class DeleteSerie():
+    def __init__(self, db, serie):
+        self.conn = (sqlite3.connect(db))
+        self.c = self.conn.cursor()
+        self.serie = serie
+
+    def get_table_names(self):
+        self.c.execute('SELECT name FROM sqlite_master WHERE type="table"')
+        table_names = [val for tup in self.c.fetchall() for val in tup]
+        return table_names
+
+    def delete_serie_from_tables(self):
+        tables = self.get_table_names()
+        for table in tables:
+            try:
+                self.c.execute('DELETE FROM "{}" WHERE SERIE="{}"'.format(table, self.serie))
+            except sqlite3.OperationalError:
+                pass
+        self.conn.commit()
+        self.conn.close()
+
+
 def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie):
     folders = ['alleen cnv/brief gemaakt', 'nagekeken in Cartagenia/brief gemaakt',
                'CheckJoep', 'negatief/brief gemaakt', 'positief/brief gemaakt']
@@ -73,7 +100,9 @@ def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie):
 if __name__ == '__main__':
     import os
     import glob
+    import json
     import shutil
+    import sqlite3
     import argparse
     import subprocess
 
@@ -98,6 +127,8 @@ if __name__ == '__main__':
                         help="Run is rehybed @ MiSeq")
     parser.add_argument("--project", nargs='?', default=False, const='2',
                         help="Run is re-analyzed @ BaseSpace")
+    parser.add_argument("--niek", action='store_true',
+                        help="Remove serie from databases")                        
 
     args = parser.parse_args()
 
@@ -115,10 +146,10 @@ if __name__ == '__main__':
         args.pipeline = True
         args.cleanup = True
 
-    BASEDIR = "/data/dnadiag/reads"
-    ARCHIEF = "/mnt/kg_nextgen_archief/IlluminaRawData/"
+    BASEDIR = '/data/dnadiag/reads'
+    ARCHIEF = '/mnt/kg_nextgen_archief/IlluminaRawData/'
     SCRIPTHOME = '/data/dnadiag/ngspipeline/'
-    CONFIG = os.path.join(SCRIPTHOME, 'ngspipeline', 'config.yaml')
+    CONFIG = os.path.join(SCRIPTHOME, 'ngspipeline', 'config.json')
     READS = os.path.join(BASEDIR, 'MS{}'.format(serie))
     BASEMOUNT = os.path.join(BASEDIR, 'basespace')
     SERIEDIR = os.path.join('/', 'mnt', 'ngs', 'Analyse*MiSEQ', 'MiSeq*Serie*{}*'.format(serie))
@@ -126,6 +157,12 @@ if __name__ == '__main__':
     STANDARDFRAGS_FILESTRING = 'MISEQ{} std fragmenten.xlsm'.format(serie)
     STANDARDFRAGS = os.path.join(SERIEDIR, 'MISEQ{}*std*fragmenten.xlsm'.format(serie))
     
+    if args.niek:
+        config_dict = read_config_json(CONFIG)
+        databases = glob.glob('{}/*.sqlite'.format(config_dict['DB']))
+        for database in databases:
+            DeleteSerie(database, serie).delete_serie_from_tables()
+
 
     if args.samplesheet:
         SAMPLESHEET = args.samplesheet
