@@ -109,16 +109,14 @@ if __name__ == '__main__':
     from ngsscriptlibrary import samplesheet_to_sample_genesis
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-s", "--serie", type=str, metavar='',
+    parser.add_argument("-s", "--serie", type=str, metavar='100',
                         help="Miseq serie nummer", required=True)
-    parser.add_argument("--samplesheet", type=str, metavar='',
+    parser.add_argument("--samplesheet", type=str, metavar='SampleSheet.csv',
                         help="Sample sheet (afwijkend van BaseSpace)")
-    parser.add_argument("-t", "--threads", type=int, default=10, metavar='',
+    parser.add_argument("-t", "--threads", type=int, default=10, metavar='10',
                         help="Number of threads for snakemake")
     parser.add_argument("-p", "--pipeline", action='store_true',
                         help="Only run the pipeline")
-    parser.add_argument("-r", "--rule", default='END', metavar='',
-                        help="Ask snakemake to run specific rule")
     parser.add_argument("--download", action='store_true',
                         help="Download reads from basespace")
     parser.add_argument("--cleanup", action='store_true',
@@ -216,7 +214,7 @@ if __name__ == '__main__':
             if not os.path.isfile(snpcheckfile):
                 run_command('touch {}'.format(snpcheckfile))
 
-        run_command('snakemake --rerun-incomplete -s {}/ngspipeline/Snakefile -j{} --configfile {} --directory {} -R {}'.format(SCRIPTHOME, threads, CONFIG, READS, rule))
+        run_command('snakemake --rerun-incomplete -s {}/ngspipeline/Snakefile -j{} --configfile {} --directory {}'.format(SCRIPTHOME, threads, CONFIG, READS))
 
     if args.cleanup:
         samples = samplesheet_to_sample_genesis('{}/SampleSheet.csv'.format(READS))
