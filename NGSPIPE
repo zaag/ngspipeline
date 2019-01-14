@@ -132,7 +132,6 @@ if __name__ == '__main__':
 
     serie = args.serie
     threads = args.threads
-    rule = args.rule
     bserie = serie
     project = args.project
 
