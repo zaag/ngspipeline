@@ -132,11 +132,11 @@ if __name__ == '__main__':
 
     serie = args.serie
     threads = args.threads
-    bserie = serie
+    basespace_serie = serie
     project = args.demultiplex
 
     if args.hester:
-        bserie = r'{}\ \(2\)'.format(serie)
+        basespace_serie = r'{}\ \(2\)'.format(serie)
 
     if not args.download and not args.pipeline and not args.cleanup:
         args.download = True
@@ -153,6 +153,16 @@ if __name__ == '__main__':
     SNPCHECKDIR = os.path.join(SERIEDIR, 'SNPcheck')
     STANDARDFRAGS_FILESTRING = 'MISEQ{} std fragmenten.xlsm'.format(serie)
     STANDARDFRAGS = os.path.join(SERIEDIR, 'MISEQ{}*std*fragmenten.xlsm'.format(serie))
+
+    #Test SERIEDIR for B series:
+    test_dirs = glob.glob(SERIEDIR)
+    if len(test_dirs) > 1:
+        for test_dir in test_dirs:
+            test = test_dir.split('/')[-1]
+            if '_' in test:
+                test = test.split('_')[0]
+            if test.endswith(str(serie)):
+                SERIEDIR = test_dir.replace(' ', '*')
     
     if args.niek:
         config_dict = read_config_json(CONFIG)
@@ -164,7 +174,7 @@ if __name__ == '__main__':
     if args.samplesheet:
         SAMPLESHEET = args.samplesheet
     else:
-        SAMPLESHEET = os.path.join(BASEMOUNT, 'Runs', bserie, 'Files', 'SampleSheet.csv')
+        SAMPLESHEET = os.path.join(BASEMOUNT, 'Runs', basespace_serie, 'Files', 'SampleSheet.csv')
 
     for _ in glob.iglob('{}/*'.format(SERIEDIR)):
         if _.endswith('Data-analyse'):
@@ -198,9 +208,9 @@ if __name__ == '__main__':
         except FileExistsError as e:
             print(e)
         else:
-            run_command('cp {}/Runs/{}/Files/*.txt {}/MiSeqRunMetrics/{}'.format(BASEMOUNT, bserie, ARCHIEF, serie))
-            run_command('cp {}/Runs/{}/Files/*.xml {}/MiSeqRunMetrics/{}'.format(BASEMOUNT, bserie, ARCHIEF, serie))
-            run_command('cp -r {}/Runs/{}/Files/InterOp {}/MiSeqRunMetrics/{}'.format(BASEMOUNT, bserie, ARCHIEF, serie))
+            run_command('cp {}/Runs/{}/Files/*.txt {}/MiSeqRunMetrics/{}'.format(BASEMOUNT, basespace_serie, ARCHIEF, serie))
+            run_command('cp {}/Runs/{}/Files/*.xml {}/MiSeqRunMetrics/{}'.format(BASEMOUNT, basespace_serie, ARCHIEF, serie))
+            run_command('cp -r {}/Runs/{}/Files/InterOp {}/MiSeqRunMetrics/{}'.format(BASEMOUNT, basespace_serie, ARCHIEF, serie))
             run_command('cp {} {}/MiSeqRunMetrics/{}'.format(SAMPLESHEET, ARCHIEF, serie))
 
         run_command('basemount --unmount {}'.format(BASEMOUNT))
