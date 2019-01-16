@@ -123,7 +123,7 @@ if __name__ == '__main__':
                         help="Move data to archive")
     parser.add_argument("--hester", action='store_true',
                         help="Run is rehybed @ MiSeq")
-    parser.add_argument("--project", nargs='?', default=False, const='2', 
+    parser.add_argument("--demultiplex", nargs='?', default=False, const='2', 
                         type=str, help="Run is re-analyzed @ BaseSpace")
     parser.add_argument("--niek", action='store_true',
                         help="Remove serie from databases")                        
@@ -133,7 +133,7 @@ if __name__ == '__main__':
     serie = args.serie
     threads = args.threads
     bserie = serie
-    project = args.project
+    project = args.demultiplex
 
     if args.hester:
         bserie = r'{}\ \(2\)'.format(serie)
@@ -186,7 +186,7 @@ if __name__ == '__main__':
 
         run_command('basemount {} -c ormook'.format(BASEMOUNT))
 
-        if args.project:
+        if project:
             run_command(r'cp -r {}/basespace/Projects/{}/Samples/*\({}\)/Files/*.gz {}'.format(BASEDIR, serie, project, READS))
         else:
             run_command('cp -r {}/basespace/Projects/{}/Samples/*/Files/*.gz {}'.format(BASEDIR, serie, READS))
