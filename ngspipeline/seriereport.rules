@@ -42,7 +42,7 @@ rule seriereport:
         wb.set_properties({
             'title': serie,
             'subject': 'MiSEQUENCING',
-            'author': 'Martin Haagmans',
+            'author': 'Scipio Africanus',
             'comments': 'Created with Python and XlsxWriter'})
         ws1 = wb.add_worksheet('Metrics')
 

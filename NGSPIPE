@@ -18,6 +18,33 @@ def create_empty_excelfile(file_name):
     wb.save(file_name)
 
 
+def read_config_json(file_name):
+    with open(file_name) as f:
+        return json.load(f)
+
+
+class DeleteSerie():
+    def __init__(self, db, serie):
+        self.conn = (sqlite3.connect(db))
+        self.c = self.conn.cursor()
+        self.serie = serie
+
+    def get_table_names(self):
+        self.c.execute('SELECT name FROM sqlite_master WHERE type="table"')
+        table_names = [val for tup in self.c.fetchall() for val in tup]
+        return table_names
+
+    def delete_serie_from_tables(self):
+        tables = self.get_table_names()
+        for table in tables:
+            try:
+                self.c.execute('DELETE FROM "{}" WHERE SERIE="{}"'.format(table, self.serie))
+            except sqlite3.OperationalError:
+                pass
+        self.conn.commit()
+        self.conn.close()
+
+
 def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie):
     folders = ['alleen cnv/brief gemaakt', 'nagekeken in Cartagenia/brief gemaakt',
                'CheckJoep', 'negatief/brief gemaakt', 'positief/brief gemaakt']
@@ -73,64 +100,81 @@ def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie):
 if __name__ == '__main__':
     import os
     import glob
+    import json
     import shutil
+    import sqlite3
     import argparse
     import subprocess
 
     from ngsscriptlibrary import samplesheet_to_sample_genesis
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-s", "--serie", type=str, metavar='',
+    parser.add_argument("-s", "--serie", type=str, 
                         help="Miseq serie nummer", required=True)
-    parser.add_argument("--samplesheet", type=str, metavar='',
+    parser.add_argument("--samplesheet", type=str,
                         help="Sample sheet (afwijkend van BaseSpace)")
-    parser.add_argument("-t", "--threads", type=int, default=10, metavar='',
+    parser.add_argument("-t", "--threads", type=int, default=10,
                         help="Number of threads for snakemake")
     parser.add_argument("-p", "--pipeline", action='store_true',
                         help="Only run the pipeline")
-    parser.add_argument("-r", "--rule", default='END', metavar='',
-                        help="Ask snakemake to run specific rule")
     parser.add_argument("--download", action='store_true',
                         help="Download reads from basespace")
     parser.add_argument("--cleanup", action='store_true',
                         help="Move data to archive")
     parser.add_argument("--hester", action='store_true',
                         help="Run is rehybed @ MiSeq")
-    parser.add_argument("--project", nargs='?', default=False, const='2',
-                        help="Run is re-analyzed @ BaseSpace")
+    parser.add_argument("--demultiplex", nargs='?', default=False, const='2', 
+                        type=str, help="Run is re-analyzed @ BaseSpace")
+    parser.add_argument("--niek", action='store_true',
+                        help="Remove serie from databases")                        
 
     args = parser.parse_args()
 
     serie = args.serie
     threads = args.threads
-    rule = args.rule
-    bserie = serie
-    project = args.project
+    basespace_serie = serie
+    project = args.demultiplex
 
     if args.hester:
-        bserie = r'{}\ \(2\)'.format(serie)
+        basespace_serie = r'{}\ \(2\)'.format(serie)
 
     if not args.download and not args.pipeline and not args.cleanup:
         args.download = True
         args.pipeline = True
         args.cleanup = True
 
-    BASEDIR = "/data/dnadiag/reads"
-    ARCHIEF = "/mnt/kg_nextgen_archief/IlluminaRawData/"
+    BASEDIR = '/data/dnadiag/reads'
+    ARCHIEF = '/mnt/kg_nextgen_archief/IlluminaRawData/'
     SCRIPTHOME = '/data/dnadiag/ngspipeline/'
-    CONFIG = os.path.join(SCRIPTHOME, 'ngspipeline', 'config.yaml')
+    CONFIG = os.path.join(SCRIPTHOME, 'ngspipeline', 'config.json')
     READS = os.path.join(BASEDIR, 'MS{}'.format(serie))
     BASEMOUNT = os.path.join(BASEDIR, 'basespace')
     SERIEDIR = os.path.join('/', 'mnt', 'ngs', 'Analyse*MiSEQ', 'MiSeq*Serie*{}*'.format(serie))
     SNPCHECKDIR = os.path.join(SERIEDIR, 'SNPcheck')
     STANDARDFRAGS_FILESTRING = 'MISEQ{} std fragmenten.xlsm'.format(serie)
     STANDARDFRAGS = os.path.join(SERIEDIR, 'MISEQ{}*std*fragmenten.xlsm'.format(serie))
+
+    #Test SERIEDIR for B series:
+    test_dirs = glob.glob(SERIEDIR)
+    if len(test_dirs) > 1:
+        for test_dir in test_dirs:
+            test = test_dir.split('/')[-1]
+            if '_' in test:
+                test = test.split('_')[0]
+            if test.endswith(str(serie)):
+                SERIEDIR = test_dir.replace(' ', '*')
     
+    if args.niek:
+        config_dict = read_config_json(CONFIG)
+        databases = glob.glob('{}/*.sqlite'.format(config_dict['DB']))
+        for database in databases:
+            DeleteSerie(database, serie).delete_serie_from_tables()
+
 
     if args.samplesheet:
         SAMPLESHEET = args.samplesheet
     else:
-        SAMPLESHEET = os.path.join(BASEMOUNT, 'Runs', bserie, 'Files', 'SampleSheet.csv')
+        SAMPLESHEET = os.path.join(BASEMOUNT, 'Runs', basespace_serie, 'Files', 'SampleSheet.csv')
 
     for _ in glob.iglob('{}/*'.format(SERIEDIR)):
         if _.endswith('Data-analyse'):
@@ -152,7 +196,7 @@ if __name__ == '__main__':
 
         run_command('basemount {} -c ormook'.format(BASEMOUNT))
 
-        if args.project:
+        if project:
             run_command(r'cp -r {}/basespace/Projects/{}/Samples/*\({}\)/Files/*.gz {}'.format(BASEDIR, serie, project, READS))
         else:
             run_command('cp -r {}/basespace/Projects/{}/Samples/*/Files/*.gz {}'.format(BASEDIR, serie, READS))
@@ -164,9 +208,9 @@ if __name__ == '__main__':
         except FileExistsError as e:
             print(e)
         else:
-            run_command('cp {}/Runs/{}/Files/*.txt {}/MiSeqRunMetrics/{}'.format(BASEMOUNT, bserie, ARCHIEF, serie))
-            run_command('cp {}/Runs/{}/Files/*.xml {}/MiSeqRunMetrics/{}'.format(BASEMOUNT, bserie, ARCHIEF, serie))
-            run_command('cp -r {}/Runs/{}/Files/InterOp {}/MiSeqRunMetrics/{}'.format(BASEMOUNT, bserie, ARCHIEF, serie))
+            run_command('cp {}/Runs/{}/Files/*.txt {}/MiSeqRunMetrics/{}'.format(BASEMOUNT, basespace_serie, ARCHIEF, serie))
+            run_command('cp {}/Runs/{}/Files/*.xml {}/MiSeqRunMetrics/{}'.format(BASEMOUNT, basespace_serie, ARCHIEF, serie))
+            run_command('cp -r {}/Runs/{}/Files/InterOp {}/MiSeqRunMetrics/{}'.format(BASEMOUNT, basespace_serie, ARCHIEF, serie))
             run_command('cp {} {}/MiSeqRunMetrics/{}'.format(SAMPLESHEET, ARCHIEF, serie))
 
         run_command('basemount --unmount {}'.format(BASEMOUNT))
@@ -179,7 +223,7 @@ if __name__ == '__main__':
             if not os.path.isfile(snpcheckfile):
                 run_command('touch {}'.format(snpcheckfile))
 
-        run_command('snakemake --rerun-incomplete -s {}/ngspipeline/Snakefile -j{} --configfile {} --directory {} -R {}'.format(SCRIPTHOME, threads, CONFIG, READS, rule))
+        run_command('snakemake --rerun-incomplete -s {}/ngspipeline/Snakefile -j{} --configfile {} --directory {} -R END'.format(SCRIPTHOME, threads, CONFIG, READS))
 
     if args.cleanup:
         samples = samplesheet_to_sample_genesis('{}/SampleSheet.csv'.format(READS))
