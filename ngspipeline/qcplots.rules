@@ -80,11 +80,14 @@ rule qcplots:
 
         def plot_varpercentages_vcf(vcffile, plotfile, targetfile, title):
             vcfreader = vcf.Reader(open(vcffile, 'r'))
-            varpercentages = [[(call.data.AD[1] / record.INFO['DP'])
-                              for call in record]
-                              for record in vcfreader
-                              if record.is_snp and not record.FILTER]
-
+            try:
+                varpercentages = [[(call.data.AD[1] / record.INFO['DP'])
+                                  for call in record]
+                                  for record in vcfreader
+                                  if record.is_snp and not record.FILTER]
+            except AttributeError:
+                varpercentages = list()
+                
             fig = plt.figure()
             ax = plt.subplot()
             ax.plot(varpercentages, 'd')
