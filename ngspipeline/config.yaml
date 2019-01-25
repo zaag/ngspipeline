@@ -1,0 +1,8 @@
+REF: /data/dnadiag/referentie/lifescope.hg19.fa
+PICARD: picard
+GATK : /data/dnadiag/programs/GenomeAnalysisTK-3.8-0-ge9d806836/GenomeAnalysisTK.jar
+DBSNP : /data/dnadiag/referentie/dbsnp137.hg19.vcf
+TARGET : /data/dnadiag/ngstargets/
+DB: /data/dnadiag/databases/
+JAVA: /data/software/jre1.8.0_144/bin/java
+pyCNV: CNV

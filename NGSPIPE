@@ -148,7 +148,8 @@ if __name__ == '__main__':
     BASEDIR = '/data/dnadiag/reads'
     ARCHIEF = '/mnt/kg_nextgen_archief/IlluminaRawData/'
     SCRIPTHOME = '/data/dnadiag/ngspipeline/'
-    CONFIG = os.path.join(SCRIPTHOME, 'ngspipeline', 'config.json')
+    CONFIG = os.path.join(SCRIPTHOME, 'ngspipeline', 'config.yaml')
+	CONFIG_JSON = os.path.join(SCRIPTHOME, 'ngspipeline', 'config.json')
     READS = os.path.join(BASEDIR, 'MS{}'.format(serie))
     BASEMOUNT = os.path.join(BASEDIR, 'basespace')
     SERIEDIR = os.path.join('/', 'mnt', 'ngs', 'Analyse*MiSEQ', 'MiSeq*Serie*{}*'.format(serie))
@@ -175,7 +176,7 @@ if __name__ == '__main__':
         SAMPLESHEET = os.path.join(BASEMOUNT, 'Runs', basespace_serie, 'Files', 'SampleSheet.csv')
 
     if args.niek:
-        config_dict = read_config_json(CONFIG)
+        config_dict = read_config_json(CONFIG_JSON)
         TARGETDB = os.path.join(config_dict["TARGET"], 'varia', 'captures.sqlite')    
         databases = glob.glob('{}/*.sqlite'.format(config_dict['DB']))
         for database in databases:

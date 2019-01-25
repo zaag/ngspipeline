@@ -9,5 +9,4 @@ recalinput.list
 *.xlsx
 reads/
 SampleSheet.csv
-config.yaml
 .vscode/settings.json
