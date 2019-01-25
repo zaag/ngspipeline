@@ -99,24 +99,6 @@ def get_file_locations(todo, targetrepo):
     return todo
 
 
-def get_pakketten(todo):
-    pakketten = list()
-    for s in todo.keys():
-        pakket = todo[s]['pakket']
-        if pakket not in pakketten:
-            pakketten.append(pakket)
-    return pakketten
-
-
-def get_captures(todo):
-    captures = list()
-    for s in todo.keys():
-        capture = todo[s]['capture']
-        if capture not in captures:
-            captures.append(capture)
-    return captures
-
-
 def create_recalinput_file(samples):
     """Create a file with a list of BAM-files (1 per sample) to use as input
     for the recalibration step in the pipeline.

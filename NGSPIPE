@@ -20,7 +20,7 @@ def create_empty_excelfile(file_name):
 
 def read_config_json(file_name):
     with open(file_name) as f:
-        return json.load(f)
+        return json.load(f)[0]
 
 
 class DeleteSerie():
@@ -107,6 +107,8 @@ if __name__ == '__main__':
     import subprocess
 
     from ngsscriptlibrary import samplesheet_to_sample_genesis
+    from ngsscriptlibrary import parse_samplesheet_for_pipeline
+    from ngsscriptlibrary import get_captures
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-s", "--serie", type=str, 
@@ -164,17 +166,21 @@ if __name__ == '__main__':
             if test.endswith(str(serie)):
                 SERIEDIR = test_dir.replace(' ', '*')
     
+    if args.samplesheet:
+        SAMPLESHEET = args.samplesheet
+    else:
+        SAMPLESHEET = os.path.join(BASEMOUNT, 'Runs', basespace_serie, 'Files', 'SampleSheet.csv')
+
     if args.niek:
         config_dict = read_config_json(CONFIG)
         databases = glob.glob('{}/*.sqlite'.format(config_dict['DB']))
         for database in databases:
             DeleteSerie(database, serie).delete_serie_from_tables()
-
-
-    if args.samplesheet:
-        SAMPLESHEET = args.samplesheet
-    else:
-        SAMPLESHEET = os.path.join(BASEMOUNT, 'Runs', basespace_serie, 'Files', 'SampleSheet.csv')
+        
+        parsed_samplesheet = parse_samplesheet_for_pipeline(SAMPLESHEET)
+        captures = get_captures(parsed_samplesheet)
+        for capture in captures:
+            run_command('CNV -c {} -s {} --delete'.format(capture, serie))
 
     for _ in glob.iglob('{}/*'.format(SERIEDIR)):
         if _.endswith('Data-analyse'):
@@ -206,7 +212,7 @@ if __name__ == '__main__':
         try:
             os.mkdir('{}/MiSeqRunMetrics/{}'.format(ARCHIEF, serie))
         except FileExistsError as e:
-            print(e)
+            pass
         else:
             run_command('cp {}/Runs/{}/Files/*.txt {}/MiSeqRunMetrics/{}'.format(BASEMOUNT, basespace_serie, ARCHIEF, serie))
             run_command('cp {}/Runs/{}/Files/*.xml {}/MiSeqRunMetrics/{}'.format(BASEMOUNT, basespace_serie, ARCHIEF, serie))
@@ -231,7 +237,7 @@ if __name__ == '__main__':
         try:
             os.mkdir('{}/MiSeq/Diagnostiek/MS{}'.format(ARCHIEF, serie))
         except FileExistsError as e:
-            print(e)
+            pass
         else:
             run_command('cp {}/reads/*.gz {}/MiSeq/Diagnostiek/MS{}'.format(READS, ARCHIEF, serie))
         finally:
