@@ -176,7 +176,7 @@ if __name__ == '__main__':
 
     if args.niek:
         config_dict = read_config_json(CONFIG)
-        TARGETDB = os.path.join(config["TARGET"], 'varia', 'captures.sqlite')    
+        TARGETDB = os.path.join(config_dict["TARGET"], 'varia', 'captures.sqlite')    
         databases = glob.glob('{}/*.sqlite'.format(config_dict['DB']))
         for database in databases:
             DeleteSerie(database, serie).delete_serie_from_tables()
