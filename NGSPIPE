@@ -156,6 +156,9 @@ if __name__ == '__main__':
     STANDARDFRAGS_FILESTRING = 'MISEQ{} std fragmenten.xlsm'.format(serie)
     STANDARDFRAGS = os.path.join(SERIEDIR, 'MISEQ{}*std*fragmenten.xlsm'.format(serie))
 
+
+
+
     #Test SERIEDIR for B series:
     test_dirs = glob.glob(SERIEDIR)
     if len(test_dirs) > 1:
@@ -173,14 +176,15 @@ if __name__ == '__main__':
 
     if args.niek:
         config_dict = read_config_json(CONFIG)
+        TARGETDB = os.path.join(config["TARGET"], 'varia', 'captures.sqlite')    
         databases = glob.glob('{}/*.sqlite'.format(config_dict['DB']))
         for database in databases:
             DeleteSerie(database, serie).delete_serie_from_tables()
         
-        parsed_samplesheet = parse_samplesheet_for_pipeline(SAMPLESHEET)
-        captures = get_captures(parsed_samplesheet)
-        for capture in captures:
-            run_command('CNV -c {} -s {} --delete'.format(capture, serie))
+        # parsed_samplesheet = parse_samplesheet_for_pipeline(SAMPLESHEET, TARGETDB)
+        # captures = get_captures(parsed_samplesheet)
+        # for capture in captures:
+        #     run_command('CNV -c {} -s {} --delete'.format(capture, serie))
 
     for _ in glob.iglob('{}/*'.format(SERIEDIR)):
         if _.endswith('Data-analyse'):
