@@ -149,7 +149,7 @@ if __name__ == '__main__':
     ARCHIEF = '/mnt/kg_nextgen_archief/IlluminaRawData/'
     SCRIPTHOME = '/data/dnadiag/ngspipeline/'
     CONFIG = os.path.join(SCRIPTHOME, 'ngspipeline', 'config.yaml')
-	CONFIG_JSON = os.path.join(SCRIPTHOME, 'ngspipeline', 'config.json')
+    CONFIG_JSON = os.path.join(SCRIPTHOME, 'ngspipeline', 'config.json')
     READS = os.path.join(BASEDIR, 'MS{}'.format(serie))
     BASEMOUNT = os.path.join(BASEDIR, 'basespace')
     SERIEDIR = os.path.join('/', 'mnt', 'ngs', 'Analyse*MiSEQ', 'MiSeq*Serie*{}*'.format(serie))
