@@ -3,6 +3,11 @@ __license__ = "MIT"
 
 from ngsscriptlibrary.mosaic import *
 
+def get_db_location(pakket):
+    pakket, _versie = pakket.split('v')
+    db = os.path.join(DBREPO, '{}.mosaic.sqlite'.format('pakket'))
+    return db
+
 rule addmosaicdata:
     input:
         docfile=rules.depthofcoverage.output[0],
@@ -18,12 +23,13 @@ rule addmosaicdata:
         if not input_dict[wildcards.sample]['mozaiek']:
             shell("touch {output}")
         elif input_dict[wildcards.sample]['mozaiek']:
+            MOSADB = get_db_location(input_dict[wildcards.sample]['pakket'])
             add_sampledata_to_database(input.bamfile,
                                        input.vcffile,
                                        input.docfile,
                                        wildcards.sample,
                                        input_dict[wildcards.sample]['pakkettarget'],
-                                       SOMOSADB)
+                                       MOSADB)
 
             shell("touch {output}")
 
@@ -46,10 +52,11 @@ rule createmosaicoutput:
             for _ in output:
                 shell("touch {_}")
         elif input_dict[wildcards.sample]['mozaiek']:
+            MOSADB = get_db_location(input_dict[wildcards.sample]['pakket'])
             bases = 'A C G T I D'.split()
-            sdata, adata = get_data_to_plot(wildcards.sample, SOMOSADB)
+            sdata, adata = get_data_to_plot(wildcards.sample, MOSADB)
             plot_data(sdata, adata, output.png)
-            MDB = Mosaic(SOMOSADB)
+            MDB = Mosaic(MOSADB)
             ref = MDB.get_reference_dict()
             lcvar = MDB.get_sample_low_coverage_var(wildcards.sample)
             lcd = MDB.parse_sample_low_coverage_var(lcvar)

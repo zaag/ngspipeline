@@ -48,7 +48,6 @@ JAVA = config['JAVA']
 TARGETDB = os.path.join(TARGETREPO, 'varia', 'captures.sqlite')
 SNPCHECK = os.path.join(TARGETREPO, 'varia', 'NGS-SNPcheck.vcf')
 METRICSDB = os.path.join(DBREPO, 'metrics.sqlite')
-SOMOSADB = os.path.join(DBREPO, 'SO.mosaic.sqlite')
 SAMPLEDB = os.path.join(DBREPO, 'samplesheets.sqlite')
 
 
