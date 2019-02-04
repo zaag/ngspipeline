@@ -376,13 +376,14 @@ rule depthofcoverage:
 
         if input_dict[wildcards.sample]['capispakket']:
             perc_covered = calc_perc_target_covered(output[0])
+            pakket = input_dict[wildcards.sample]['capture']
 
         elif not input_dict[wildcards.sample]['capispakket']:
             pakket_target = input_dict[wildcards.sample]['pakkettarget']
             perc_covered = calc_perc_target_covered(output[0],
                                                     filter_regions=True,
                                                     target=pakket_target)
-        pakket = input_dict[wildcards.sample]['pakket']
+            pakket = input_dict[wildcards.sample]['pakket']
         perc_target_covered2db(wildcards.sample, perc_covered, pakket, serie, METRICSDB)
 
 
