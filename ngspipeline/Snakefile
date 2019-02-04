@@ -23,15 +23,16 @@ from ngsscriptlibrary.parsing import *
 from ngsscriptlibrary import metrics2db
 from ngsscriptlibrary import summary2db
 from ngsscriptlibrary import sangers2db
+from ngsscriptlibrary import snpcheck2db
 from ngsscriptlibrary import sample_in_db
-from ngsscriptlibrary import base_perc_reads2db
+from ngsscriptlibrary import get_rs_gpos_dict
+from ngsscriptlibrary import compare_snpchecks
 from ngsscriptlibrary import samplesheetinfo2db
+from ngsscriptlibrary import base_perc_reads2db
+from ngsscriptlibrary import get_snpcheck_serie
 from ngsscriptlibrary import perc_target_covered2db
 from ngsscriptlibrary import parse_sangers_for_seriereport
-from ngsscriptlibrary import snpcheck2db
-from ngsscriptlibrary import get_snpcheck_serie
-from ngsscriptlibrary import compare_snpchecks
-from ngsscriptlibrary import get_rs_gpos_dict
+
 
 matplotlib.use('Agg')
 
@@ -49,7 +50,6 @@ TARGETDB = os.path.join(TARGETREPO, 'varia', 'captures.sqlite')
 SNPCHECK = os.path.join(TARGETREPO, 'varia', 'NGS-SNPcheck.vcf')
 METRICSDB = os.path.join(DBREPO, 'metrics.sqlite')
 SAMPLEDB = os.path.join(DBREPO, 'samplesheets.sqlite')
-
 
 samplesheet = 'SampleSheet.csv'
 

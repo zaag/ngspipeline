@@ -60,8 +60,14 @@ rule seriereport:
 
         for dnr in samples:
             MR = MetricsDBReader(db, dnr, serie, input_dict[dnr]['capture'])
-            pakket = input_dict[dnr]['pakket']
+
+            if input_dict[dnr]['capispakket']:
+                pakket = input_dict[dnr]['capture']
+            elif not input_dict[dnr]['capispakket']:
+                pakket = input_dict[dnr]['pakket']
+
             panel = input_dict[dnr]['panel']
+
             if input_dict[dnr]['panel'] is None:
                 perctargetcovered = 'nvt'
             elif input_dict[dnr]['panel'] is not None:

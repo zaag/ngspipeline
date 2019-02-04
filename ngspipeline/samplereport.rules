@@ -60,10 +60,20 @@ rule samplereport:
     message:
         "Creating excel file for sample."
     run:
+        sample = wildcards.sample
+        
+        if input_dict[sample]['capispakket']:
+            pakket = input_dict[sample]['capture']
+        elif not input_dict[sample]['capispakket']:
+            pakket = input_dict[sample]['pakket']
+        
+        panel = input_dict[sample]['panel']
+        oid = input_dict[sample]['oid']
+
         db = '{}/metrics.sqlite'.format(config['DB'])
         wb = xlsxwriter.Workbook(output[0])
         wb.set_properties({
-            'title':    wildcards.sample,
+            'title':    sample,
             'subject':  'MiSEQUENCING',
             'author':   'Martin Haagmans',
             'comments': 'Created with Python and XlsxWriter'})
@@ -110,10 +120,10 @@ rule samplereport:
         INFO = ['Sample', 'Pakket', 'Panel', 'OID capture', 'Picard', 'GATK',
                 'Recalibrate dbSNP', 'Referentie', 'Aligner']
 
-        INFODATA = ['{}'.format(wildcards.sample),
-                    '{}'.format(input_dict[wildcards.sample]['pakket']),
-                    '{}'.format(input_dict[wildcards.sample]['panel']),
-                    '{}'.format(input_dict[wildcards.sample]['oid']),
+        INFODATA = ['{}'.format(sample),
+                    '{}'.format(pakket),
+                    '{}'.format(panel),
+                    '{}'.format(oid),
                     'picard-tools 1.95',
                     'GATK3.8 HaplotypeCaller',
                     '{}'.format(DBSNP.split('/')[-1]),
@@ -134,10 +144,10 @@ rule samplereport:
         SANGER = ['Gen', 'Chr.', 'g.Start', 'g.Eind', 'Resultaat',
                   'Paraaf analist', 'Paraaf staf']
 
-        MR = MetricsDBReader(METRICSDB, wildcards.sample, serie,
-                             input_dict[wildcards.sample]['capture'])
+        MR = MetricsDBReader(METRICSDB, sample, serie,
+                             input_dict[sample]['capture'])
         # First fill in the sample ID
-        ws1.write(1, 1, wildcards.sample)
+        ws1.write(1, 1, sample)
         samenvatting = '''=B4&"("&B2&" + "&B3&"; " &B5&", "&B6&", "&B7&")"'''
         ws1.write(len(MISEQ), 1, samenvatting)
 
@@ -182,7 +192,7 @@ rule samplereport:
 
         sangers = MR.get_sanger_fragments()
         df_serie = standaardfragmenten_naar_df(standaardfragmenten)
-        standaard = standaardfragmenten_dict_sample(wildcards.sample, df_serie)
+        standaard = standaardfragmenten_dict_sample(sample, df_serie)
 
         
         if 'Geen sangers:' in sangers:
@@ -237,7 +247,7 @@ rule samplereport:
             chromosoom = '''=SUBSTITUTE(LOWER(LEFT(A{r},SEARCH("(",A{r},1)-1)), "chr", "")'''.format(r=row)
             nmnummer = '''=LEFT(B{r},SEARCH("(",B{r},1)-1)'''.format(r=row)
             VARS3 = ['', gennaam, cnotatie, gnotatie, pnotatie,  '', chromosoom,
-                     nmnummer, 'GRCh37', wildcards.sample]
+                     nmnummer, 'GRCh37', sample]
 
             row3, col3 = write_list(VARS3, ws3, formatheader=headerformat,
                                     header=False, row=row3,
@@ -253,8 +263,8 @@ rule samplereport:
                             {'validate': 'list',
                              'source': ['WT', 'NVT', 'AFW', 'NTS']})
 
-        capture = input_dict[wildcards.sample]['capture']
-        if input_dict[wildcards.sample]['cnvdiagnostiek']:
+        capture = input_dict[sample]['capture']
+        if input_dict[sample]['cnvdiagnostiek']:
             ws4 = wb.add_worksheet('CNV')
             ws5 = wb.add_worksheet('CNV info')
 
@@ -270,7 +280,7 @@ rule samplereport:
             ws4.set_column('G:G', 18)
             ws4.set_column('I:I', 18)
 
-            cnv_calls = 'output/CNV_{}/Calls/{}.txt'.format(capture, wildcards.sample)
+            cnv_calls = 'output/CNV_{}/Calls/{}.txt'.format(capture, sample)
             cnv_archive = 'output/CNV_{}/archive.txt'.format(capture)
             cnv_excluded = 'output/CNV_{}/excluded.txt'.format(capture)
 
@@ -313,7 +323,7 @@ rule samplereport:
                 for line in f:
                     row5, col5 = write_list(line.split(), ws5, row=row5, orientation='cols')
 
-        if input_dict[wildcards.sample]['mozaiek']:
+        if input_dict[sample]['mozaiek']:
             ws6 = wb.add_worksheet('Mozaiek')
             ws7 = wb.add_worksheet('Mozaiek <500x')
             ws6.set_column('A:A', 14)
