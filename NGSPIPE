@@ -154,8 +154,8 @@ if __name__ == '__main__':
     BASEMOUNT = os.path.join(BASEDIR, 'basespace')
     SERIEDIR = os.path.join('/', 'mnt', 'ngs', 'Analyse*MiSEQ', 'MiSeq*Serie*{}*'.format(serie))
     SNPCHECKDIR = os.path.join(SERIEDIR, 'SNPcheck')
-    STANDARDFRAGS_FILESTRING = 'MISEQ{} std fragmenten2.xlsm'.format(serie)
-    STANDARDFRAGS = os.path.join(SERIEDIR, 'MISEQ{}*std*fragmenten2.xlsm'.format(serie))
+    STANDARDFRAGS_FILESTRING = 'Miseq{} std fragmenten2.xlsm'.format(serie)
+    STANDARDFRAGS = os.path.join(SERIEDIR, 'Miseq{}*std*fragmenten2.xlsm'.format(serie))
 
 
     #Test SERIEDIR for B series:
