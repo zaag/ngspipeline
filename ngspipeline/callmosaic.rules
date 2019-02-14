@@ -102,6 +102,9 @@ rule createmosaicoutput:
             with open(output.litvar, 'w') as f:
                 for locus, varb_cpos in litvars.items():
                     varbase, cpos = varb_cpos
-                    varperc  = getattr(data[locus], varbase)
+                    try:
+                        varperc  = getattr(data[locus], varbase)
+                    except KeyError:
+                        varperc = 'Locus niet in data'
 
                     f.write('{}\t{}\t{}\n'.format(locus, cpos, varperc))
