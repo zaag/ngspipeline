@@ -154,8 +154,7 @@ if __name__ == '__main__':
     BASEMOUNT = os.path.join(BASEDIR, 'basespace')
     SERIEDIR = os.path.join('/', 'mnt', 'ngs', 'Analyse*MiSEQ', 'MiSeq*Serie*{}*'.format(serie))
     SNPCHECKDIR = os.path.join(SERIEDIR, 'SNPcheck')
-    STANDARDFRAGS_FILESTRING = 'Miseq{} std fragmenten2.xlsm'.format(serie)
-    STANDARDFRAGS = os.path.join(SERIEDIR, 'Miseq{}*std*fragmenten2.xlsm'.format(serie))
+    STANDARDFRAGS = os.path.join(SERIEDIR, 'Miseq*{}*std*fragmenten2.xlsx'.format(serie))
 
 
     #Test SERIEDIR for B series:
@@ -197,9 +196,9 @@ if __name__ == '__main__':
             glob.glob(STANDARDFRAGS)[0]
         except IndexError:
             _, STANDARDFRAGS = os.path.split(STANDARDFRAGS)
-            create_empty_excelfile(os.path.join(READS, STANDARDFRAGS_FILESTRING))
+            create_empty_excelfile(os.path.join(READS, 'standaardfragmenten.xlsm'))
         else:
-            run_command('cp {} {}'.format(STANDARDFRAGS, READS))
+            run_command('cp {} {}/standaardfragmenten.xlsm'.format(STANDARDFRAGS, READS))
 
         run_command('cp -r {} {}'.format(SNPCHECKDIR, READS))
 
