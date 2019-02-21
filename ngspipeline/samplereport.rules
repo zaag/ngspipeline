@@ -75,7 +75,7 @@ rule samplereport:
         wb.set_properties({
             'title':    sample,
             'subject':  'MiSEQUENCING',
-            'author':   'Martin Haagmans',
+            'author':   'Scipio Africanus',
             'comments': 'Created with Python and XlsxWriter'})
         ws1 = wb.add_worksheet('patient + Miseq info')
         ws2 = wb.add_worksheet('low coverage')
@@ -218,9 +218,9 @@ rule samplereport:
                     st_end = int(_['primer max'])
                     if st_start <= start and st_end >= end and st_chrom == chrom: 
                         score = _['Score']
-                        score = ' '
+                        paraaf = _['Initialen']
 
-                out = [gene, chrom, start, end , score]
+                out = [gene, chrom, start, end , score, paraaf]
                 row2, col2 = write_list(out, ws2, row=row2, col=0,
                                         orientation='cols')
 
