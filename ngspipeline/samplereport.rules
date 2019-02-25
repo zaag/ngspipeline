@@ -192,7 +192,7 @@ rule samplereport:
 
         sangers = MR.get_sanger_fragments()
 
-        if os.path.isfile(standaardfragmenten)
+        if os.path.isfile(standaardfragmenten):
             df_serie = standaardfragmenten_naar_df(standaardfragmenten)
             standaard = standaardfragmenten_dict_sample(sample, df_serie)
         else:
