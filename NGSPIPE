@@ -195,8 +195,7 @@ if __name__ == '__main__':
         try:
             glob.glob(STANDARDFRAGS)[0]
         except IndexError:
-            _, STANDARDFRAGS = os.path.split(STANDARDFRAGS)
-            create_empty_excelfile(os.path.join(READS, 'standaardfragmenten.xlsx'))
+            pass
         else:
             run_command('cp {} {}/standaardfragmenten.xlsx'.format(STANDARDFRAGS, READS))
 

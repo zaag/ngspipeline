@@ -191,9 +191,12 @@ rule samplereport:
                                 skip=3, orientation='cols', format=underlined)
 
         sangers = MR.get_sanger_fragments()
-        df_serie = standaardfragmenten_naar_df(standaardfragmenten)
-        standaard = standaardfragmenten_dict_sample(sample, df_serie)
 
+        if os.path.isfile(standaardfragmenten)
+            df_serie = standaardfragmenten_naar_df(standaardfragmenten)
+            standaard = standaardfragmenten_dict_sample(sample, df_serie)
+        else:
+            standaard = dict()
         
         if 'Geen sangers:' in sangers:
             ws2.set_column('A:A', 26)
@@ -215,8 +218,8 @@ rule samplereport:
                     if not 'chr.' in _:
                         continue
                     st_chrom = 'chr{}'.format(_['chr.'])
-                    st_start = int(_['primer min'])
-                    st_end = int(_['primer max'])
+                    st_start = int(_['fragment min'])
+                    st_end = int(_['fragment max'])
                     if st_start <= start and st_end >= end and st_chrom == chrom: 
                         score = _['Score']
                         paraaf = _['Initialen']
