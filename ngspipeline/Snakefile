@@ -114,7 +114,7 @@ captures = get_captures(input_dict)
 pakketten = get_pakketten(input_dict)
 samples = input_dict.keys()
 serie = [input_dict[_]['serie'] for _ in input_dict.keys()][0]
-standaardfragmenten = 'standaardfragmenten.xlsm'
+standaardfragmenten = 'standaardfragmenten.xlsx'
 
 
 # Rules for snakemake

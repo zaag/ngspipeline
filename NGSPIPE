@@ -196,9 +196,9 @@ if __name__ == '__main__':
             glob.glob(STANDARDFRAGS)[0]
         except IndexError:
             _, STANDARDFRAGS = os.path.split(STANDARDFRAGS)
-            create_empty_excelfile(os.path.join(READS, 'standaardfragmenten.xlsm'))
+            create_empty_excelfile(os.path.join(READS, 'standaardfragmenten.xlsx'))
         else:
-            run_command('cp {} {}/standaardfragmenten.xlsm'.format(STANDARDFRAGS, READS))
+            run_command('cp {} {}/standaardfragmenten.xlsx'.format(STANDARDFRAGS, READS))
 
         run_command('cp -r {} {}'.format(SNPCHECKDIR, READS))
 
