@@ -209,7 +209,7 @@ rule samplereport:
                 gene, chrom, start, end, *_ = line
                 start = int(start)
                 end = int(end)
-                score = ' '
+                score = str()
                 for _ in standaard:
                     if not 'chr.' in _:
                         continue
