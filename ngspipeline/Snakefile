@@ -64,7 +64,7 @@ def get_file_locations(todo, targetrepo):
         cnvtarget = '{}_target.bed'.format(todo[s]['capture'])
         cnvtarget = os.path.join(targetrepo, 'captures', cnvtarget)
 
-       cap_is_pakket = todo[s]['capispakket']
+        cap_is_pakket = todo[s]['capispakket']
 
         if cap_is_pakket:
             annot = '{}_target.annotated'.format(todo[s]['capture'])
