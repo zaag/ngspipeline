@@ -64,12 +64,11 @@ def get_file_locations(todo, targetrepo):
         cnvtarget = '{}_target.bed'.format(todo[s]['capture'])
         cnvtarget = os.path.join(targetrepo, 'captures', cnvtarget)
 
-        annot = '{}_target.annotated'.format(todo[s]['capture'])
-        annot = os.path.join(targetrepo, 'captures', annot)
-
-        cap_is_pakket = todo[s]['capispakket']
+       cap_is_pakket = todo[s]['capispakket']
 
         if cap_is_pakket:
+            annot = '{}_target.annotated'.format(todo[s]['capture'])
+            annot = os.path.join(targetrepo, 'captures', annot)
             varcal = '{}_generegions.bed'.format(todo[s]['capture'])
             varcal = os.path.join(targetrepo, 'captures', varcal)
             sanger = '{}_target.bed'.format(todo[s]['capture'])
@@ -77,14 +76,17 @@ def get_file_locations(todo, targetrepo):
             pakket = '{}_target.bed'.format(todo[s]['capture'])
             pakket = os.path.join(targetrepo, 'captures', pakket)
         elif not cap_is_pakket:
+            annot = '{}_target.annotated'.format(todo[s]['pakket'])
+            annot = os.path.join(targetrepo, 'pakketten', annot)
             varcal = '{}_generegions.bed'.format(todo[s]['pakket'])
             varcal = os.path.join(targetrepo, 'pakketten', varcal)
             sanger = '{}_target.bed'.format(todo[s]['pakket'])
             sanger = os.path.join(targetrepo, 'pakketten', sanger)
             pakket = '{}_target.bed'.format(todo[s]['pakket'])
             pakket = os.path.join(targetrepo, 'pakketten', pakket)
-
         if todo[s]['panel'] is not None:
+            annot = '{}_target.annotated'.format(todo[s]['panel'])
+            annot = os.path.join(targetrepo, 'panels', annot)            
             sanger = '{}_target.bed'.format(todo[s]['panel'])
             sanger = os.path.join(targetrepo, 'panels', sanger)
 
