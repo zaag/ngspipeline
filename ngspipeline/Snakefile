@@ -34,6 +34,7 @@ from ngsscriptlibrary import perc_target_covered2db
 from ngsscriptlibrary import parse_sangers_for_seriereport
 
 
+
 matplotlib.use('Agg')
 
 # Define variables from config file
@@ -125,6 +126,14 @@ onsuccess:
     shell("if [ -z '$(ls -A picardmetrics)' ]; then rmdir picardmetrics ; fi ;")
     shell("if [ -z '$(ls -A gatkfiles)'  ]; then rmdir gatkfiles ; fi ;")
     shell("if [ -z '$(ls -A alignments)'  ]; then rmdir alignments ; fi ;")
+
+rule all:
+    input:
+        expand("output/{sample}.filtered.vcf", sample=samples),
+        expand("output/{sample}.xlsx", sample=samples),
+        expand("output/{sample}.DM.bam", sample=samples),
+        "output/MS{}_report.xlsx".format(serie),
+        "output/MS{}_QC.pdf".format(serie)
 
 rule prepare:
     input:
@@ -526,10 +535,4 @@ include:
     'qcplots.rules'
 
 
-rule END:
-    input:
-        expand(rules.filtervariants.output, sample=samples),
-        expand(rules.samplereport.output, sample=samples),
-        expand(rules.markduplicates.output.bam, sample=samples),
-        rules.qcplots.output,
-        rules.seriereport.output
+

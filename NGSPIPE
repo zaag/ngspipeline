@@ -230,7 +230,7 @@ if __name__ == '__main__':
             if not os.path.isfile(snpcheckfile):
                 run_command('touch {}'.format(snpcheckfile))
 
-        run_command('snakemake --rerun-incomplete -s {}/ngspipeline/Snakefile -j{} --configfile {} --directory {} -R END'.format(SCRIPTHOME, threads, CONFIG, READS))
+        run_command('snakemake --rerun-incomplete -s {}/ngspipeline/Snakefile -j{} --configfile {} --directory {}'.format(SCRIPTHOME, threads, CONFIG, READS))
 
     if args.cleanup:
         samples = samplesheet_to_sample_genesis('{}/SampleSheet.csv'.format(READS))
