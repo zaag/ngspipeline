@@ -25,14 +25,6 @@ def write_list(listname, worksheet, row=0, col=0, skip=1, header=False,
     return (row, col)
 
 
-def mean_doc(docfile):
-    "Create a dataframe from GATK's DepthOfCoverage. Return mean and std."
-    df = pd.read_csv(docfile, index_col=0, sep='\t')
-    df = df.filter(regex='Depth_for_')
-    df.columns = [col.split("_")[-1] for col in df]
-    return(df.mean().round(0), df.std().round(0))
-
-
 def parse_moza_table(table):
     with open(table, 'r') as f:
         for line in f:
@@ -160,7 +152,7 @@ rule samplereport:
         row1, col1 = write_list(MR.get_alignmetrics() + MR.get_hsmetrics(),
                                 ws1, row=row1 - len(SEQRAP) - 2, col=1)
 
-        row1, col1 = write_list(mean_doc(input.doc),
+        row1, col1 = write_list(list(MR.get_mean_and_stdev())),
                                 ws1, row=row1 - 1, col=col1, format=gray)
 
         row1, col1 = write_list(SNPCHECK, ws1, header='SNPCHECK',

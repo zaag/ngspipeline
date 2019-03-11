@@ -33,8 +33,6 @@ from ngsscriptlibrary import get_snpcheck_serie
 from ngsscriptlibrary import perc_target_covered2db
 from ngsscriptlibrary import parse_sangers_for_seriereport
 
-
-
 matplotlib.use('Agg')
 
 # Define variables from config file
@@ -363,7 +361,7 @@ rule depthofcoverage:
         bamfile = rules.markduplicates.output.bam,
         table = rules.recalibrate.output
     output:
-        "gatkfiles/{sample}.DoC",
+        tmp("gatkfiles/{sample}.DoC"),
         temp("gatkfiles/{sample}.DoC.sample_cumulative_coverage_counts"),
         temp("gatkfiles/{sample}.DoC.sample_cumulative_coverage_proportions"),
         temp("gatkfiles/{sample}.DoC.sample_interval_statistics"),
@@ -395,6 +393,10 @@ rule depthofcoverage:
                                                     filter_regions=True,
                                                     target=pakket_target)
             pakket = input_dict[wildcards.sample]['pakket']
+
+        mean, std = mean_doc(output[0])
+        target = input_dict[wildcards.sample]['capture']
+        mean_std_2db(mean, std, serie, wildcards.sample, target, METRICSDB)    
         perc_target_covered2db(wildcards.sample, perc_covered, pakket, serie, METRICSDB)
 
 
