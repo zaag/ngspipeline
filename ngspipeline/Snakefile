@@ -24,6 +24,7 @@ from ngsscriptlibrary import metrics2db
 from ngsscriptlibrary import summary2db
 from ngsscriptlibrary import sangers2db
 from ngsscriptlibrary import snpcheck2db
+from ngsscriptlibrary import mean_std_2db
 from ngsscriptlibrary import sample_in_db
 from ngsscriptlibrary import get_rs_gpos_dict
 from ngsscriptlibrary import compare_snpchecks
