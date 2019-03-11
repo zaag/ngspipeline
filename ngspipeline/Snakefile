@@ -361,7 +361,7 @@ rule depthofcoverage:
         bamfile = rules.markduplicates.output.bam,
         table = rules.recalibrate.output
     output:
-        tmp("gatkfiles/{sample}.DoC"),
+        temp("gatkfiles/{sample}.DoC"),
         temp("gatkfiles/{sample}.DoC.sample_cumulative_coverage_counts"),
         temp("gatkfiles/{sample}.DoC.sample_cumulative_coverage_proportions"),
         temp("gatkfiles/{sample}.DoC.sample_interval_statistics"),
