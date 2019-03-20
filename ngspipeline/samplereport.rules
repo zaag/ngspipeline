@@ -45,7 +45,9 @@ rule samplereport:
         mosalctable = rules.createmosaicoutput.output.lc,
         mosavartable = rules.createmosaicoutput.output.var,
         mosalitvartable = rules.createmosaicoutput.output.litvar,
-        snpcheck = rules.comparesnpcheckssample.output
+        snpcheck = rules.comparesnpcheckssample.output,
+        riskscore = rules.calculateriskscore.output
+        
 
     output:
         "output/{sample}.xlsx"
@@ -154,6 +156,13 @@ rule samplereport:
 
         row1, col1 = write_list(list(MR.get_mean_and_stdev()),
                                 ws1, row=row1 - 1, col=col1, format=gray)
+
+        if input_dict[wildcards.sample]['riskscore']:
+            riskscore = MR.get_risk_score()
+            row1, col1 = write_list(['Score:'], ws1, header='POLYGENIC RISK SCORE',
+                                    formatheader=headerformat, row=row1)
+            row1, col1 = write_list([riskscore], ws1, row=row1-3, col=1)
+
 
         row1, col1 = write_list(SNPCHECK, ws1, header='SNPCHECK',
                                 formatheader=headerformat, skip=1, row=row1,
