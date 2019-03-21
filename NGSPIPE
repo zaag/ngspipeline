@@ -128,7 +128,9 @@ if __name__ == '__main__':
     parser.add_argument("--demultiplex", nargs='?', default=False, const='2', 
                         type=str, help="Run is re-analyzed @ BaseSpace")
     parser.add_argument("--niek", action='store_true',
-                        help="Remove serie from databases")                        
+                        help="Remove serie from databases")
+    parser.add_argument("--unlock", action='store_true',
+                        help="Unlock snakemake")                        
 
     args = parser.parse_args()
 
@@ -229,8 +231,13 @@ if __name__ == '__main__':
             snpcheckfile = os.path.join(READS, 'SNPcheck', '{}.qpcrsnpcheck'.format(sample))
             if not os.path.isfile(snpcheckfile):
                 run_command('touch {}'.format(snpcheckfile))
-
-        run_command('snakemake --rerun-incomplete -s {}/ngspipeline/Snakefile -j{} --configfile {} --directory {}'.format(SCRIPTHOME, threads, CONFIG, READS))
+        
+        run_snakemake = 'snakemake --rerun-incomplete -s {}/ngspipeline/Snakefile -j{} --configfile {} --directory {}'.format(SCRIPTHOME, threads, CONFIG, READS)
+        
+        if args.unlock:
+            run_snakemake = f'{run_snakemake} --unlock'
+                
+        run_command(run_snakemake)
 
     if args.cleanup:
         samples = samplesheet_to_sample_genesis('{}/SampleSheet.csv'.format(READS))
