@@ -130,7 +130,9 @@ if __name__ == '__main__':
     parser.add_argument("--niek", action='store_true',
                         help="Remove serie from databases")
     parser.add_argument("--unlock", action='store_true',
-                        help="Unlock snakemake")                        
+                        help="Unlock snakemake")
+    parser.add_argument("--notemp", action='store_true',
+                        help="Do not remove temporary files")                                                 
 
     args = parser.parse_args()
 
@@ -236,6 +238,8 @@ if __name__ == '__main__':
         
         if args.unlock:
             run_snakemake = f'{run_snakemake} --unlock'
+        if args.notemp:
+            run_snakemake = f'{run_snakemake} --notemp'
                 
         run_command(run_snakemake)
 
