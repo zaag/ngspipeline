@@ -191,7 +191,10 @@ rule samplereport:
                                 header='NON-CALLABLE SANGER FRAGMENTEN',
                                 skip=3, orientation='cols', format=underlined)
 
-        sangers = MR.get_sanger_fragments()
+        if panel is none:
+            sangers = MR.get_sanger_fragments(pakket)
+        else:
+            sangers = MR.get_sanger_fragments(panel)
 
         if os.path.isfile(standaardfragmenten):
             df_serie = standaardfragmenten_naar_df(standaardfragmenten)
