@@ -2,8 +2,11 @@ import os
 import csv
 import glob
 import pysam
+
 from decimal import Decimal
-from collections import namedtuple
+from collections import namedtuple, defaultdict
+
+from ngsscriptlibrary import mosaic
 from ngsscriptlibrary import samplesheetinfo2db
 from ngsscriptlibrary.parsing import parse_samplesheet_for_pipeline
 
@@ -27,10 +30,14 @@ def get_file_locations(todo, targetrepo):
     Return dict.
     """
     for s in todo.keys():
-        if not input_dict[s]['amplicon']:
+        if not todo[s]['amplicon']:
             continue
-        genesis = input_dict[s]['genesis'].replace('.SV', '')
-        target = os.path.join(targetrepo, 'amplicons', f'{genesis}_target.bed')
+        genesis = todo[s]['genesis']
+
+        if genesis.startswith('chr'):
+            target = genesis
+        else:
+            target = os.path.join(targetrepo, 'amplicons', f'{genesis}_target.bed')
         todo[s]['target'] = target
     return todo
 
@@ -97,16 +104,17 @@ def create_output(outfile, data, loci):
     with open(outfile, 'w') as f_out:
         f_out.write('Sample')
         for locus in loci:
-            f_out.write(f'\t{locus} DP\trefP\tA\tC\tT\tG\tD')
+            f_out.write(f'\t{locus} DP\tA\tC\tT\tG\tD\tI\trefP')
         f_out.write('\n')
 
         for sampleID, sample_data in data.items():
             f_out.write(f'{sampleID}\t')
+            insertions = sample_data['insertions']
             for locus in loci:
                 dp = sample_data[locus]['DP']
                 refp = sample_data[locus]['refP']
                 refbase = sample_data[locus]['refbase']
-                f_out.write(f'{dp}\t{refp:.4}\t')
+                f_out.write(f'{dp}\t')
 
                 for base in 'A C T G D'.split():
                     if base == refbase:
@@ -114,6 +122,13 @@ def create_output(outfile, data, loci):
                     else:
                         perc = sample_data[locus][base]
                         f_out.write(f'{perc:.4}\t')
+                if locus in insertions:
+                    insertion = Decimal(insertions[locus] / dp)
+                else:
+                    insertion = Decimal(0)
+                f_out.write(f'{insertion:.4}\t')
+                refp = refp - insertion
+                f_out.write(f'{refp:.4}\t')
             f_out.write('\n')
 
 input_dict = parse_samplesheet_for_pipeline(SAMPLESHEET, TARGETDB)
@@ -204,5 +219,11 @@ rule calculatepercentages:
         loci = get_loci_from_docfile(input[0])
         refd = get_ref_dict(loci, REF)
         for sample in samples:
+            target = input_dict[sample]['target']
+            if target.startswith('chr'):
+                insertions = mosaic.get_indel_dict_for_locus(f'output/{sample}.sorted.bam', target)
+            else:
+                insertions = mosaic.get_indel_dicts(f'output/{sample}.sorted.bam', target)
             data[sample]  = parse_doc(f'tempfiles/{sample}.DoC', refd, loci)
+            data[sample]['insertions'] = insertions
         create_output(output.text, data, loci)
