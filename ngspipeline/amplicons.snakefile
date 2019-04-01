@@ -2,9 +2,11 @@ import os
 import csv
 import glob
 import pysam
+import xlsxwriter
 
 from decimal import Decimal
-from collections import namedtuple, defaultdict
+from collections import namedtuple
+from collections import defaultdict
 
 from ngsscriptlibrary import mosaic
 from ngsscriptlibrary import samplesheetinfo2db
@@ -131,13 +133,117 @@ def create_output(outfile, data, loci):
                 f_out.write(f'{refp:.4}\t')
             f_out.write('\n')
 
+def create_output_excel(outfile, data, loci):
+    wb = xlsxwriter.Workbook(outfile)
+    wb.set_properties({
+        'title':    'Amplicons',
+        'subject':  'MiSEQUENCING',
+        'author':   'Scipio Africanus',
+        'comments': 'Created with Python and XlsxWriter'})
+
+    lowcov = wb.add_format()
+    lowcov.set_bg_color('orange')
+    positive = wb.add_format()
+    positive.set_bg_color('green')
+    headerformat = wb.add_format()
+    headerformat.set_font_size(16)
+    underlined = wb.add_format()
+    underlined.set_bottom()    
+
+    ws = wb.add_worksheet('Percentages')
+    ws_analyse = wb.add_worksheet('Analyse info')
+
+    ws.set_column('A:B', 18)
+    ws_analyse.set_column('A:B', 20)
+
+    analyse_info = [('Referentie', 'lifescope.hg19.fa'), 
+                    ('Aligner', 'bwa-mem 0.7.12-r1039'), 
+                    ('GATK', 'GATK 3.8')]
+
+    row = 0 
+    col = 0
+
+    ws_analyse.write(row, col, 'ANALYSE INFO', headerformat)
+    row += 2
+
+    for name, version in analyse_info:
+        ws_analyse.write(row, col, name)
+        col += 1
+        ws_analyse.write(row, col, version)
+        row += 1
+        col = 0
+
+    row = 0 
+    col = 0
+
+
+    ws.write(row, col, 'PERCENTAGE PER LOCUS', headerformat)
+    row += 2
+
+    ws.write(row, col, 'Sample', underlined)
+    col += 1
+
+    for locus in loci:
+        for _ in [f'{locus} DP', 'A', 'C', 'T', 'G', 'D', 'I', 'reP']:
+            ws.write(row, col, _, underlined)
+            col += 1
+            
+    row += 1
+    col = 0
+
+    for sampleID, sample_data in data.items():
+        ws.write(row, col, f'{sampleID}')
+        col += 1 
+        
+        insertions = sample_data['insertions']
+        
+        for locus in loci:
+            dp = sample_data[locus]['DP']
+            refp = sample_data[locus]['refP']
+            refbase = sample_data[locus]['refbase']
+            if int(dp) < 500:
+                ws.write(row, col, f'{dp}', lowcov)
+            else:
+                ws.write(row, col, f'{dp}')
+            col += 1
+
+            for base in 'A C T G D'.split():
+                if base == refbase:
+                    ws.write(row, col, '.')
+                    col += 1
+                else:
+                    perc = sample_data[locus][base]
+                    if perc >= Decimal(0.01):
+                        ws.write(row, col, f'{perc:.4}', positive)
+                    else:
+                        ws.write(row, col, f'{perc:.4}')
+                    col += 1
+            if locus in insertions:
+                insertion = Decimal(insertions[locus] / dp)
+            else:
+                insertion = Decimal(0)
+            if insertion >= Decimal(0.01):
+                ws.write(row, col, f'{insertion:.4}', positive)
+            else:
+                ws.write(row, col, f'{insertion:.4}')
+            col += 1
+            refp = refp - insertion
+            ws.write(row, col, f'{refp:.4}')
+            col += 1
+        row += 1
+        col = 0
+    
+    
+    wb.close()
+
 input_dict = parse_samplesheet_for_pipeline(SAMPLESHEET, TARGETDB)
 input_dict = get_file_locations(input_dict, TARGETREPO)
 samples = [s for s in input_dict.keys() if input_dict[s]['amplicon']]
+serie = [input_dict[_]['serie'] for _ in input_dict.keys()][0]
 
 rule all:
     input:
-        expand("output/final_output.txt", sample=samples)
+        f"output/MS{serie}_amplicon.xlsx"
 
 
 rule prepare:
@@ -201,6 +307,7 @@ rule depthofcoverage:
         --minMappingQuality 20 \
         --omitIntervalStatistics \
         --printBaseCounts \
+        --countType COUNT_FRAGMENTS \
         -dels  > {log} 2>&1
         ''')
 
@@ -209,7 +316,7 @@ rule calculatepercentages:
     input:
         expand(rules.depthofcoverage.output.doc, sample=samples)
     output:
-        text = "output/final_output.txt"
+        excel = f"output/MS{serie}_amplicon.xlsx"
     message:
         "Calculating ref and var percentages"
     log:
@@ -226,4 +333,4 @@ rule calculatepercentages:
                 insertions = mosaic.get_indel_dicts(f'output/{sample}.sorted.bam', target)
             data[sample]  = parse_doc(f'tempfiles/{sample}.DoC', refd, loci)
             data[sample]['insertions'] = insertions
-        create_output(output.text, data, loci)
+        create_output_excel(output.excel, data, loci)
