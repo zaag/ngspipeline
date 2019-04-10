@@ -236,7 +236,7 @@ def create_output_excel(outfile, data, loci):
     
     wb.close()
 
-input_dict = parse_samplesheet_for_pipeline(SAMPLESHEET, TARGETDB)
+input_dict = parse_samplesheet_for_pipeline(SAMPLESHEET, TARGETDB, ['Amplicon', 'Amplicons'])
 input_dict = get_file_locations(input_dict, TARGETREPO)
 samples = [s for s in input_dict.keys() if input_dict[s]['amplicon']]
 serie = [input_dict[_]['serie'] for _ in input_dict.keys()][0]

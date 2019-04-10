@@ -122,7 +122,7 @@ input_dict = parse_samplesheet_for_pipeline(samplesheet, TARGETDB, ['Amplicon', 
 input_dict = get_file_locations(input_dict, TARGETREPO)
 captures = get_captures(input_dict)
 pakketten = get_pakketten(input_dict)
-samples = input_dict.keys()
+samples = [s for s in input_dict.keys() if not input_dict[s]['amplicon']]
 serie = [input_dict[_]['serie'] for _ in input_dict.keys()][0]
 
 
