@@ -322,15 +322,18 @@ rule calculatepercentages:
     log:
         "logfiles/DoC2Percentage.log"        
     run:
-        data = dict()
-        loci = get_loci_from_docfile(input[0])
-        refd = get_ref_dict(loci, REF)
-        for sample in samples:
-            target = input_dict[sample]['target']
-            if target.startswith('chr'):
-                insertions = mosaic.get_indel_dict_for_locus(f'output/{sample}.sorted.bam', target)
-            else:
-                insertions = mosaic.get_indel_dicts(f'output/{sample}.sorted.bam', target)
-            data[sample]  = parse_doc(f'tempfiles/{sample}.DoC', refd, loci)
-            data[sample]['insertions'] = insertions
-        create_output_excel(output.excel, data, loci)
+        if len(input) == 0:
+            shell("touch {output.excel}")
+        else:
+            data = dict()
+            loci = get_loci_from_docfile(input[0])
+            refd = get_ref_dict(loci, REF)
+            for sample in samples:
+                target = input_dict[sample]['target']
+                if target.startswith('chr'):
+                    insertions = mosaic.get_indel_dict_for_locus(f'output/{sample}.sorted.bam', target)
+                else:
+                    insertions = mosaic.get_indel_dicts(f'output/{sample}.sorted.bam', target)
+                data[sample]  = parse_doc(f'tempfiles/{sample}.DoC', refd, loci)
+                data[sample]['insertions'] = insertions
+            create_output_excel(output.excel, data, loci)

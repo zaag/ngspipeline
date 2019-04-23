@@ -36,8 +36,9 @@ rule qcplots:
             df.sort_index(inplace=True)
             sample_target = list()
             for sample in sorted(input_dict.keys()):
-                target = input_dict[sample]['pakket']
-                sample_target.append((sample, target))
+                if not input_dict[sample]['amplicon']:
+                    target = input_dict[sample]['pakket']
+                    sample_target.append((sample, target))
             index = pd.MultiIndex.from_tuples(sample_target,
                                               names=['Target', 'index'])
             df.index = index
