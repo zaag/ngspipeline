@@ -45,7 +45,7 @@ class DeleteSerie():
         self.conn.close()
 
 
-def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie):
+def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie, amplicons):
     folders = ['alleen cnv/brief gemaakt', 'nagekeken in Cartagenia/brief gemaakt',
                'CheckJoep', 'negatief/brief gemaakt', 'positief/brief gemaakt']
 
@@ -68,6 +68,9 @@ def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie):
     for s, p in sample_pakket:
 
         if 'amplicon' in p.lower():
+            continue
+        
+        if p in amplicons:
             continue
 
         pdir = '{}/{}'.format(outputdir, p)
@@ -109,6 +112,7 @@ if __name__ == '__main__':
     from ngsscriptlibrary import samplesheet_to_sample_genesis
     from ngsscriptlibrary import parse_samplesheet_for_pipeline
     from ngsscriptlibrary import get_captures
+    from ngsscriptlibrary import TargetDatabase
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-s", "--serie", type=str, 
@@ -159,6 +163,9 @@ if __name__ == '__main__':
     SERIEDIR = os.path.join('/', 'mnt', 'ngs', 'Analyse*MiSEQ', 'MiSeq*Serie*{}*'.format(serie))
     SNPCHECKDIR = os.path.join(SERIEDIR, 'SNPcheck')
     STANDARDFRAGS = os.path.join(SERIEDIR, 'Miseq*{}*std*fragmenten2.xlsx'.format(serie))
+    
+    config_dict = read_config_json(CONFIG_JSON)
+    TARGETDB = os.path.join(config_dict["TARGET"], 'varia', 'captures.sqlite') 
 
 
     #Test SERIEDIR for B series:
@@ -177,8 +184,6 @@ if __name__ == '__main__':
         SAMPLESHEET = os.path.join(BASEMOUNT, 'Runs', basespace_serie, 'Files', 'SampleSheet.csv')
 
     if args.niek:
-        config_dict = read_config_json(CONFIG_JSON)
-        TARGETDB = os.path.join(config_dict["TARGET"], 'varia', 'captures.sqlite')    
         databases = glob.glob('{}/*.sqlite'.format(config_dict['DB']))
         for database in databases:
             DeleteSerie(database, serie).delete_serie_from_tables()
@@ -235,6 +240,7 @@ if __name__ == '__main__':
                 run_command('touch {}'.format(snpcheckfile))
         
         run_snakemake = 'snakemake --rerun-incomplete -s {}/ngspipeline/Snakefile -j{} --configfile {} --directory {}'.format(SCRIPTHOME, threads, CONFIG, READS)
+        run_snakemake_amplicons = 'snakemake --rerun-incomplete -s {}/ngspipeline/amplicons.snakefile -j{} --configfile {} --directory {}'.format(SCRIPTHOME, threads, CONFIG, READS)
         
         if args.unlock:
             run_snakemake = f'{run_snakemake} --unlock'
@@ -242,10 +248,12 @@ if __name__ == '__main__':
             run_snakemake = f'{run_snakemake} --notemp'
                 
         run_command(run_snakemake)
+        run_command(run_snakemake_amplicons)
 
     if args.cleanup:
+        amplicon_genesiscodes = TargetDatabase(TARGETDB).get_amplicon_genesiscode()
         samples = samplesheet_to_sample_genesis('{}/SampleSheet.csv'.format(READS))
-        move_data_to_diagnostic_tree(samples, OUTPUTDIR, READS, serie)
+        move_data_to_diagnostic_tree(samples, OUTPUTDIR, READS, serie, amplicon_genesiscodes)
         try:
             os.mkdir('{}/MiSeq/Diagnostiek/MS{}'.format(ARCHIEF, serie))
         except FileExistsError as e:
