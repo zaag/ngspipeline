@@ -221,13 +221,11 @@ rule samplereport:
                 gene, chrom, start, end, *_ = line
                 start = int(start)
                 end = int(end)
+                out = [gene, chrom, start, end] 
                 for _ in standaard_merged:
                     st_chrom, st_start, st_end, score, paraaf = _
                     if st_start <= start and st_end >= end and st_chrom == chrom: 
                         out = [gene, chrom, start, end , score, paraaf]        
-                    else:
-                        out = [gene, chrom, start, end]        
-                
                 row2, col2 = write_list(out, ws2, row=row2, col=0,
                                         orientation='cols')
 
