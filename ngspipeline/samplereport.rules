@@ -205,7 +205,7 @@ rule samplereport:
             standaard_merged = merge_standaardfrags(fragmentlist)
 
         else:
-            standaard = dict()
+            standaard_merged = dict()
         
         if 'Geen sangers:' in sangers:
             ws2.set_column('A:A', 26)
@@ -222,8 +222,8 @@ rule samplereport:
                 start = int(start)
                 end = int(end)
                 out = [gene, chrom, start, end] 
-                for _ in standaard_merged:
-                    st_chrom, st_start, st_end, score, paraaf = _
+                for st in standaard_merged:
+                    st_chrom, st_start, st_end, score, paraaf = st
                     if st_start <= start and st_end >= end and st_chrom == chrom: 
                         out = [gene, chrom, start, end , score, paraaf]        
                 row2, col2 = write_list(out, ws2, row=row2, col=0,
