@@ -201,7 +201,7 @@ rule samplereport:
         if os.path.isfile(standaardfragmenten):
             df_serie = standaardfragmenten_naar_df(standaardfragmenten)
             standaard = standaardfragmenten_dict_sample(sample, df_serie)
-            fragmentlist = get_fragment_list(standaard_dict)
+            fragmentlist = get_fragment_list(standaard)
             standaard_merged = merge_standaardfrags(fragmentlist)
 
         else:
