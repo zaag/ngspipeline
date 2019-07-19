@@ -4,6 +4,9 @@ __license__ = "MIT"
 from ngsscriptlibrary import MetricsDBReader
 from ngsscriptlibrary import standaardfragmenten_dict_sample
 from ngsscriptlibrary import standaardfragmenten_naar_df
+from ngsscriptlibrary import get_fragment_list
+from ngsscriptlibrary import merge_standaardfrags
+
 
 def write_list(listname, worksheet, row=0, col=0, skip=1, header=False,
                orientation='rows', format=None, formatheader=None):
@@ -47,7 +50,6 @@ rule samplereport:
         mosalitvartable = rules.createmosaicoutput.output.litvar,
         snpcheck = rules.comparesnpcheckssample.output,
         riskscore = rules.calculateriskscore.output
-        
 
     output:
         "output/{sample}.xlsx"
@@ -199,8 +201,11 @@ rule samplereport:
         if os.path.isfile(standaardfragmenten):
             df_serie = standaardfragmenten_naar_df(standaardfragmenten)
             standaard = standaardfragmenten_dict_sample(sample, df_serie)
+            fragmentlist = get_fragment_list(standaard)
+            standaard_merged = merge_standaardfrags(fragmentlist)
+
         else:
-            standaard = dict()
+            standaard_merged = dict()
         
         if 'Geen sangers:' in sangers:
             ws2.set_column('A:A', 26)
@@ -216,19 +221,11 @@ rule samplereport:
                 gene, chrom, start, end, *_ = line
                 start = int(start)
                 end = int(end)
-                score = str()
-                paraaf = str()
-                for _ in standaard:
-                    if not 'chr.' in _:
-                        continue
-                    st_chrom = 'chr{}'.format(_['chr.'])
-                    st_start = int(_['fragment min'])
-                    st_end = int(_['fragment max'])
+                out = [gene, chrom, start, end] 
+                for st in standaard_merged:
+                    st_chrom, st_start, st_end, score, paraaf = st
                     if st_start <= start and st_end >= end and st_chrom == chrom: 
-                        score = _['Score']
-                        paraaf = _['Initialen']
-
-                out = [gene, chrom, start, end , score, paraaf]
+                        out = [gene, chrom, start, end , score, paraaf]        
                 row2, col2 = write_list(out, ws2, row=row2, col=0,
                                         orientation='cols')
 
