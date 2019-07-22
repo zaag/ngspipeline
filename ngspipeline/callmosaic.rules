@@ -40,6 +40,7 @@ rule createmosaicoutput:
         doc=rules.depthofcoverage.output[0]
     output:
         png=temp("gatkfiles/{sample}.mosaic.png"),
+        pngzoom=temp("gatkfiles/{sample}.zoom_mosaic.png"),
         var=temp("gatkfiles/{sample}.mosaic.var.txt"),
         litvar=temp("gatkfiles/{sample}.mosaic.litvar.txt"),
         lc=temp("gatkfiles/{sample}.mosaic.lc.txt")
@@ -55,7 +56,11 @@ rule createmosaicoutput:
             MOSADB = get_db_location(input_dict[wildcards.sample]['pakket'])
             bases = 'A C G T I D'.split()
             sdata, adata = get_data_to_plot(wildcards.sample, MOSADB)
-            plot_data(sdata, adata, output.png)
+            zoom = plot_data(sdata, adata, output.png)
+            if zoom:
+                plot_data(sdata, adata, output.pngzoom, set_ylim=True)
+            else:
+                shell("touch {output.pngzoom}")
             MDB = Mosaic(MOSADB)
             ref = MDB.get_reference_dict()
             lcvar = MDB.get_sample_low_coverage_var(wildcards.sample)

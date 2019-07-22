@@ -45,6 +45,7 @@ rule samplereport:
         hsmetrics = rules.hsmetrics.output,
         cnvdone = rules.cnvdetection.output,
         mosapng = rules.createmosaicoutput.output.png,
+        mosapngzoom = rules.createmosaicoutput.output.pngzoom,
         mosalctable = rules.createmosaicoutput.output.lc,
         mosavartable = rules.createmosaicoutput.output.var,
         mosalitvartable = rules.createmosaicoutput.output.litvar,
@@ -329,17 +330,26 @@ rule samplereport:
                     row5, col5 = write_list(line.split(), ws5, row=row5, orientation='cols')
 
         if input_dict[sample]['mozaiek']:
+            plot_zoom = os.stat(input.mosapngzoom).st_size > 0
             ws6 = wb.add_worksheet('Mozaiek')
             ws7 = wb.add_worksheet('Mozaiek <500x')
             ws6.set_column('A:A', 14)
             ws7.set_column('A:A', 14)
+            
 
             ws6.insert_image('A1', input.mosapng,
                              {'x_scale': 0.75, 'y_scale': 0.75})
 
+            if plot_zoom:
+                ws6.insert_image('A34', input.mosapngzoom,
+                                {'x_scale': 0.75, 'y_scale': 0.75})
+                row6 = 67
+            else:
+                row6 = 35
+
             row6, col6 = write_list([], ws6, formatheader=headerformat,
-                                    header='Mozaiek calls', orientation='cols',
-                                    format=underlined, row=35)
+                                header='Mozaiek calls', orientation='cols',
+                                format=underlined, row=row6)
 
             row6 -= 1
 
