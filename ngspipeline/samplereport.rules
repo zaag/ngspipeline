@@ -45,6 +45,7 @@ rule samplereport:
         hsmetrics = rules.hsmetrics.output,
         cnvdone = rules.cnvdetection.output,
         mosapng = rules.createmosaicoutput.output.png,
+        mosapngzoom = rules.createmosaicoutput.output.pngzoom,
         mosalctable = rules.createmosaicoutput.output.lc,
         mosavartable = rules.createmosaicoutput.output.var,
         mosalitvartable = rules.createmosaicoutput.output.litvar,
@@ -333,13 +334,21 @@ rule samplereport:
             ws7 = wb.add_worksheet('Mozaiek <500x')
             ws6.set_column('A:A', 14)
             ws7.set_column('A:A', 14)
+            
 
             ws6.insert_image('A1', input.mosapng,
                              {'x_scale': 0.75, 'y_scale': 0.75})
 
+            if input_dict[wildcards.sample]['mozaiekzoom']:
+                ws6.insert_image('A34', input.mosapngzoom,
+                                {'x_scale': 0.75, 'y_scale': 0.75})
+                 row6 = 69
+            else:
+                row6 = 35
+
             row6, col6 = write_list([], ws6, formatheader=headerformat,
-                                    header='Mozaiek calls', orientation='cols',
-                                    format=underlined, row=35)
+                                header='Mozaiek calls', orientation='cols',
+                                format=underlined, row=row6)
 
             row6 -= 1
 
