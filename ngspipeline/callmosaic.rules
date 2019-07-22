@@ -59,9 +59,7 @@ rule createmosaicoutput:
             zoom = plot_data(sdata, adata, output.png)
             if zoom:
                 plot_data(sdata, adata, output.pngzoom, set_ylim=True)
-                input_dict[wildcards.sample]['mozaiekzoom'] = True
             else:
-                input_dict[wildcards.sample]['mozaiekzoom'] = False
                 shell("touch {output.pngzoom}")
             MDB = Mosaic(MOSADB)
             ref = MDB.get_reference_dict()
