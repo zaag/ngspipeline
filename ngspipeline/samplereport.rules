@@ -342,7 +342,7 @@ rule samplereport:
             if input_dict[wildcards.sample]['mozaiekzoom']:
                 ws6.insert_image('A34', input.mosapngzoom,
                                 {'x_scale': 0.75, 'y_scale': 0.75})
-                 row6 = 69
+                row6 = 69
             else:
                 row6 = 35
 
