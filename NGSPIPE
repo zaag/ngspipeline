@@ -2,7 +2,10 @@
 
 
 def run_command(command):
-    subprocess.call(command, shell=True, stderr=subprocess.STDOUT)
+    subprocess.call(command, 
+                    shell=True, 
+                    check=True,
+                    stderr=subprocess.STDOUT)
 
 
 def create_dir(dir_to_create):
@@ -244,11 +247,14 @@ if __name__ == '__main__':
         
         if args.unlock:
             run_snakemake = f'{run_snakemake} --unlock'
+            run_snakemake = f'{run_snakemake_amplicons} --unlock'
         if args.notemp:
             run_snakemake = f'{run_snakemake} --notemp'
-                
-        run_command(run_snakemake)
-        run_command(run_snakemake_amplicons)
+            run_snakemake = f'{run_snakemake_amplicons} --notemp'
+
+        if not args.unlock and not args.notemp:
+            run_command(run_snakemake)
+            run_command(run_snakemake_amplicons)
 
     if args.cleanup:
         amplicon_genesiscodes = TargetDatabase(TARGETDB).get_amplicon_genesiscode()
