@@ -24,10 +24,10 @@ rule addmosaicdata:
             shell("touch {output}")
         elif input_dict[wildcards.sample]['mozaiek']:
             
-            if input_dict[sample]['capispakket']:
-                pakket = input_dict[sample]['capture']
-            elif not input_dict[sample]['capispakket']:
-                pakket = input_dict[sample]['pakket']
+            if input_dict[wildcards.sample]['capispakket']:
+                pakket = input_dict[wildcards.sample]['capture']
+            elif not input_dict[wildcards.sample]['capispakket']:
+                pakket = input_dict[wildcards.sample]['pakket']
 
             MOSADB = get_db_location(input_dict[wildcards.sample]['pakket'])
             add_sampledata_to_database(input.bamfile,
