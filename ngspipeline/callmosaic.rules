@@ -28,6 +28,7 @@ rule addmosaicdata:
                                        input.vcffile,
                                        input.docfile,
                                        wildcards.sample,
+                                       serie,
                                        input_dict[wildcards.sample]['pakkettarget'],
                                        MOSADB)
 
@@ -55,7 +56,7 @@ rule createmosaicoutput:
         elif input_dict[wildcards.sample]['mozaiek']:
             MOSADB = get_db_location(input_dict[wildcards.sample]['pakket'])
             bases = 'A C G T I D'.split()
-            sdata, adata = get_data_to_plot(wildcards.sample, MOSADB)
+            sdata, adata = get_data_to_plot(wildcards.sample, serie, MOSADB)
             zoom = plot_data(sdata, adata, output.png)
             if zoom:
                 plot_data(sdata, adata, output.pngzoom, set_ylim=True)
@@ -63,9 +64,9 @@ rule createmosaicoutput:
                 shell("touch {output.pngzoom}")
             MDB = Mosaic(MOSADB)
             ref = MDB.get_reference_dict()
-            lcvar = MDB.get_sample_low_coverage_var(wildcards.sample)
+            lcvar = MDB.get_sample_low_coverage_var(wildcards.sample, serie)
             lcd = MDB.parse_sample_low_coverage_var(lcvar)
-            lcref = MDB.get_sample_low_coverage_ref(wildcards.sample)
+            lcref = MDB.get_sample_low_coverage_ref(wildcards.sample, serie)
 
             for locus in lcref:
                 lcd[locus] = dict()
