@@ -36,6 +36,7 @@ rule addmosaicdata:
                                        wildcards.sample,
                                        serie,
                                        input_dict[wildcards.sample]['pakkettarget'],
+                                       pakket,
                                        MOSADB)
 
             shell("touch {output}")
