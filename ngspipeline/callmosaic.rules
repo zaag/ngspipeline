@@ -23,13 +23,19 @@ rule addmosaicdata:
         if not input_dict[wildcards.sample]['mozaiek']:
             shell("touch {output}")
         elif input_dict[wildcards.sample]['mozaiek']:
+            
+            if input_dict[sample]['capispakket']:
+                pakket = input_dict[sample]['capture']
+            elif not input_dict[sample]['capispakket']:
+                pakket = input_dict[sample]['pakket']
+
             MOSADB = get_db_location(input_dict[wildcards.sample]['pakket'])
             add_sampledata_to_database(input.bamfile,
                                        input.vcffile,
                                        input.docfile,
                                        wildcards.sample,
                                        serie,
-                                       input_dict[wildcards.sample]['pakkettarget'],
+                                       pakket
                                        MOSADB)
 
             shell("touch {output}")
