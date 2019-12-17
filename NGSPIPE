@@ -2,7 +2,7 @@
 
 
 def run_command(command):
-    subprocess.call(command, 
+    subprocess.run(command, 
                     shell=True, 
                     check=True,
                     stderr=subprocess.STDOUT)
