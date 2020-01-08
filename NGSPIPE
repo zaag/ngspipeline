@@ -84,11 +84,11 @@ def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie, ampli
             for folder in folders:
                 create_dir('{}/{}'.format(pdir, folder))
 
-        bam = glob.glob('{}/output/{}*.bam'.format(workdir, s))[0]
-        bai = glob.glob('{}/output/{}*.bai'.format(workdir, s))[0]
-        vcf = glob.glob('{}/output/{}*.vcf'.format(workdir, s))[0]
-        idx = glob.glob('{}/output/{}*.vcf.idx'.format(workdir, s))[0]
-        report = glob.glob('{}/output/{}*.xlsx'.format(workdir, s))[0]
+        bam = glob.glob('{}/output/{}.*.bam'.format(workdir, s))[0]
+        bai = glob.glob('{}/output/{}.*.bai'.format(workdir, s))[0]
+        vcf = glob.glob('{}/output/{}.*.vcf'.format(workdir, s))[0]
+        idx = glob.glob('{}/output/{}.*.vcf.idx'.format(workdir, s))[0]
+        report = glob.glob('{}/output/{}.xlsx'.format(workdir, s))[0]
 
         for f in bam, bai, vcf, idx, report:
             _fb, fn = os.path.split(f)
