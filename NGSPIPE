@@ -72,8 +72,9 @@ def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie, ampli
 
         if 'amplicon' in p.lower():
             continue
-        
-        if p in amplicons:
+        elif 'chr:' in p.lower():
+            continue
+        elif p in amplicons:
             continue
 
         pdir = '{}/{}'.format(outputdir, p)
