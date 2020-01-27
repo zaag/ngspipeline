@@ -129,7 +129,7 @@ serie = [input_dict[_]['serie'] for _ in input_dict.keys()][0]
 # Rules for snakemake
 onsuccess:
     shell("if [ -f recalinput.list ]; then rm -f recalinput.list ; fi ;")
-    shell("if [ -z '$(ls -A tempfiles)' ]; then rmdir picardmetrics ; fi ;")
+    shell("if [ -z '$(ls -A tempfiles)' ]; then rmdir tempfiles ; fi ;")
     shell("if [ -z '$(ls -A alignments)'  ]; then rmdir alignments ; fi ;")
 
 rule all:
