@@ -67,6 +67,10 @@ rule samplereport:
         panel = input_dict[sample]['panel']
         oid = input_dict[sample]['oid']
 
+        sex = input_dict[sample]['geslacht']
+        ff = input_dict[sample]['FFnummer']
+        dob = input_dict[sample]['geboortedatum']
+
         db = '{}/metrics.sqlite'.format(config['DB'])
         wb = xlsxwriter.Workbook(output[0])
         wb.set_properties({
@@ -143,8 +147,11 @@ rule samplereport:
 
         MR = MetricsDBReader(METRICSDB, sample, serie,
                              input_dict[sample]['capture'])
-        # First fill in the sample ID
+        # First fill in the patient info
         ws1.write(1, 1, sample)
+        ws1.write(3, 1, ff)
+        ws1.write(4, 1, dob)
+        ws1.write(5, 1, sex)
         samenvatting = '''=B4&"("&B2&" + "&B3&"; " &B5&", "&B6&", "&B7&")"'''
         ws1.write(len(MISEQ), 1, samenvatting)
 
@@ -199,8 +206,8 @@ rule samplereport:
         else:
             sangers = MR.get_sanger_fragments(panel)
 
-        if os.path.isfile(standaardfragmenten):
-            df_serie = standaardfragmenten_naar_df(standaardfragmenten)
+        if os.path.isfile(STANDAARDFRAGMENTEN):
+            df_serie = standaardfragmenten_naar_df(STANDAARDFRAGMENTEN)
             standaard = standaardfragmenten_dict_sample(sample, df_serie)
             fragmentlist = get_fragment_list(standaard)
             standaard_merged = merge_standaardfrags(fragmentlist)

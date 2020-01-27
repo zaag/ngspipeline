@@ -51,9 +51,13 @@ TARGETDB = os.path.join(TARGETREPO, 'varia', 'captures.sqlite')
 SNPCHECK = os.path.join(TARGETREPO, 'varia', 'NGS-SNPcheck.vcf')
 METRICSDB = os.path.join(DBREPO, 'metrics.sqlite')
 SAMPLEDB = os.path.join(DBREPO, 'samplesheets.sqlite')
+PATIENTDB = os.path.join(DBREPO, 'patientinfo.sqlite')
 
-samplesheet = 'SampleSheet.csv'
-standaardfragmenten = 'standaardfragmenten.xlsx'
+SAMPLESHEET = 'SampleSheet.csv'
+STANDAARDFRAGMENTEN = 'standaardfragmenten.xlsx'
+
+for fn in [TARGETDB, SNPCHECK, METRICSDB, SAMPLEDB, PATIENTDB, SAMPLESHEET]:
+    assert os.path.isfile(fn), '{} bestaat niet'.format(fn)
 
 def get_file_locations(todo, targetrepo):
     """Read dict with targets and analyses and add correct file locations.
@@ -107,6 +111,17 @@ def get_file_locations(todo, targetrepo):
 
     return todo
 
+def add_patient_info(todo, db):
+    for sample in todo.keys():
+        sex, ff, dob = get_patient_info(sample, db)
+        if sex == 'M':
+            sex = 'Man'
+        elif sex == 'V':
+            sex = 'Vrouw'
+        todo[sample]['geslacht'] = sex
+        todo[sample]['FFnummer'] = ff
+        todo[sample]['geboortedatum'] = dob
+    return todo
 
 def create_recalinput_file(samples):
     """Create a file with a list of BAM-files (1 per sample) to use as input
@@ -118,12 +133,14 @@ def create_recalinput_file(samples):
 
 
 # Get todo list for samples
-input_dict = parse_samplesheet_for_pipeline(samplesheet, TARGETDB, ['Amplicon', 'Amplicons'])
+input_dict = parse_samplesheet_for_pipeline(SAMPLESHEET, TARGETDB, ['Amplicon', 'Amplicons'])
 input_dict = get_file_locations(input_dict, TARGETREPO)
+input_dict = add_patient_info(input_dict, PATIENTDB)
 captures = get_captures(input_dict)
 pakketten = get_pakketten(input_dict)
 samples = [s for s in input_dict.keys() if not input_dict[s]['amplicon']]
 serie = [input_dict[_]['serie'] for _ in input_dict.keys()][0]
+
 
 
 # Rules for snakemake
@@ -142,7 +159,7 @@ rule all:
 
 rule prepare:
     input:
-        "SampleSheet.csv"
+        {SAMPLESHEET}
     output:
         expand("reads/{sample}.R1.fastq.gz", sample=samples),
         expand("reads/{sample}.R2.fastq.gz", sample=samples)
