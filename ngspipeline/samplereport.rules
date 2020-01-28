@@ -6,6 +6,7 @@ from ngsscriptlibrary import standaardfragmenten_dict_sample
 from ngsscriptlibrary import standaardfragmenten_naar_df
 from ngsscriptlibrary import get_fragment_list
 from ngsscriptlibrary import merge_standaardfrags
+from ngsscriptlibrary import get_patient_info
 
 
 def write_list(listname, worksheet, row=0, col=0, skip=1, header=False,
