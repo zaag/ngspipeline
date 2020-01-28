@@ -112,9 +112,9 @@ def get_file_locations(todo, targetrepo):
 
     return todo
 
-def add_patient_info(todo, db):
+def add_patient_info(todo, serie, db):
     for sample in todo.keys():
-        sex, ff, dob = get_patient_info(sample, db)
+        sex, ff, dob = get_patient_info(sample, serie, db)
         if sex == 'M':
             sex = 'Man'
         elif sex == 'V':
@@ -136,12 +136,12 @@ def create_recalinput_file(samples):
 # Get todo list for samples
 input_dict = parse_samplesheet_for_pipeline(SAMPLESHEET, TARGETDB, ['Amplicon', 'Amplicons'])
 input_dict = get_file_locations(input_dict, TARGETREPO)
-input_dict = add_patient_info(input_dict, PATIENTDB)
+
 captures = get_captures(input_dict)
 pakketten = get_pakketten(input_dict)
 samples = [s for s in input_dict.keys() if not input_dict[s]['amplicon']]
 serie = [input_dict[_]['serie'] for _ in input_dict.keys()][0]
-
+input_dict = add_patient_info(input_dict, serie, PATIENTDB)
 
 
 # Rules for snakemake
