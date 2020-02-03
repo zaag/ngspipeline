@@ -296,6 +296,14 @@ rule samplereport:
             cnv_calls = 'output/CNV_{}/Calls/{}.txt'.format(capture, sample)
             cnv_archive = 'output/CNV_{}/archive.txt'.format(capture)
             cnv_excluded = 'output/CNV_{}/excluded.txt'.format(capture)
+            cnv_sex = 'output/CNV_{}/geschat_geslacht.txt'.format(capture)
+            
+            sex_unknown = dict()
+            
+            with open(cnv_sex) as f:
+                for line in f:
+                    sex_unknown_sample, sex_guess = line.split()
+                    sex_unknown[sex_unknown_sample] = sex_guess
 
             if not os.path.isfile(cnv_calls):
                 row4, col4 = write_list(['Geen calls', '',
@@ -306,6 +314,8 @@ rule samplereport:
             elif os.path.isfile(cnv_calls):
                 ws4.write(1, 10, 'Paraaf', underlined)
                 ws4.write(2, 9, 'Eerste beoordeling: ')
+                if sample in sex_unknown:
+                    ws4.write(3, 9, '{} is {}'.format(sample, sex_guess[sample]))
                 with open(cnv_calls, 'r') as f:
                     header = next(f)
                     header = list(header.split())
