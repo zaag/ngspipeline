@@ -315,7 +315,7 @@ rule samplereport:
                 ws4.write(1, 10, 'Paraaf', underlined)
                 ws4.write(2, 9, 'Eerste beoordeling: ')
                 if sample in sex_unknown:
-                    ws4.write(3, 9, '{} is {}'.format(sample, sex_guess[sample]))
+                    ws4.write(3, 9, '{} is {}'.format(sample, sex_unknown[sample]))
                 with open(cnv_calls, 'r') as f:
                     header = next(f)
                     header = list(header.split())
