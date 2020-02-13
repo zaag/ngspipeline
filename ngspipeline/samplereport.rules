@@ -300,10 +300,11 @@ rule samplereport:
             
             sex_unknown = dict()
             
-            with open(cnv_sex) as f:
-                for line in f:
-                    sex_unknown_sample, sex_guess = line.split()
-                    sex_unknown[sex_unknown_sample] = sex_guess
+            if os.path.isfile(cnv_sex):
+                with open(cnv_sex) as f:
+                    for line in f:
+                        sex_unknown_sample, sex_guess = line.split()
+                        sex_unknown[sex_unknown_sample] = sex_guess
 
             if not os.path.isfile(cnv_calls):
                 row4, col4 = write_list(['Geen calls', '',
