@@ -158,6 +158,7 @@ rule all:
         "output/MS{}_report.xlsx".format(serie),
         "output/MS{}_QC.pdf".format(serie)
 
+
 rule prepare:
     input:
         {SAMPLESHEET}
@@ -178,9 +179,9 @@ rule dump_input_dict:
     input:
         {SAMPLESHEET}
     output:
-        'output/input.json'
+        "output/input.json"
     run:
-        with open(output, 'w') as fp:
+        with open("output/input.json", 'w') as fp:
             json.dump(input_dict, fp, indent=4)
 
 
