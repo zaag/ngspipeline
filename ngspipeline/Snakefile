@@ -181,7 +181,7 @@ rule dump_input_dict:
     output:
         "output/input.json"
     run:
-        with open("output/input.json", 'w') as fp:
+        with open("{}".format(output), 'w') as fp:
             json.dump(input_dict, fp, indent=4)
 
 
