@@ -49,11 +49,11 @@ class DeleteSerie():
 
 
 def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie, amplicons):
-        folders = ['CheckStaf',
-                   'alleen cnv/brief gemaakt',
-                   'negatief/brief gemaakt',
-                   'positief/brief gemaakt']
-                   
+    folders = ['CheckStaf', 
+               'alleen cnv/brief gemaakt', 
+               'negatief/brief gemaakt', 
+               'positief/brief gemaakt']
+
     cnv_output_dirs = glob.glob('{}/output/CNV_*'.format(workdir))
 
     for cnv_output_dir in cnv_output_dirs:
