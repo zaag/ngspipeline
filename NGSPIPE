@@ -68,42 +68,46 @@ def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie, ampli
     shutil.copyfile('{}/output/MS{}_QC.pdf'.format(workdir, serie),
                     '{}/MS{}_QC.pdf'.format(outputdir, serie))
 
-    pdone = list()
+    pakketdone = list()
 
-    for s, p in sample_pakket:
+    for sample, pakket, cnvonly in sample_pakket:
 
-        if 'amplicon' in p.lower():
+        if 'amplicon' in pakket.lower():
             continue
-        elif p.lower().startswith('chr'):
+        elif pakket.lower().startswith('chr'):
             continue
-        elif p in amplicons:
+        elif pakket in amplicons:
             continue
 
-        pdir = '{}/{}'.format(outputdir, p)
+        pakketdir = '{}/{}'.format(outputdir, pakket)
 
-        if p not in pdone:
-            pdone.append(p)
-            create_dir(pdir)
+        if pakket not in pakketdone:
+            pakketdone.append(pakket)
+            create_dir(pakketdir)
             for folder in folders:
-                create_dir('{}/{}'.format(pdir, folder))
+                create_dir('{}/{}'.format(pakketdir, folder))
 
-        bam = glob.glob('{}/output/{}.*.bam'.format(workdir, s))[0]
-        bai = glob.glob('{}/output/{}.*.bai'.format(workdir, s))[0]
-        vcf = glob.glob('{}/output/{}.*.vcf'.format(workdir, s))[0]
-        idx = glob.glob('{}/output/{}.*.vcf.idx'.format(workdir, s))[0]
-        report = glob.glob('{}/output/{}.xlsx'.format(workdir, s))[0]
+        bam = glob.glob('{}/output/{}.*.bam'.format(workdir, sample))[0]
+        bai = glob.glob('{}/output/{}.*.bai'.format(workdir, sample))[0]
+        vcf = glob.glob('{}/output/{}.*.vcf'.format(workdir, sample))[0]
+        idx = glob.glob('{}/output/{}.*.vcf.idx'.format(workdir, sample))[0]
+        report = glob.glob('{}/output/{}.xlsx'.format(workdir, sample))[0]
 
         for f in bam, bai, vcf, idx, report:
             _fb, fn = os.path.split(f)
-            if not os.path.isfile('{}/{}/{}'.format(outputdir, p, fn)):
+            if not os.path.isfile('{}/{}/{}'.format(outputdir, pakket, fn)):
                 fn_base, fn_ext = os.path.splitext(fn)
                 if fn_ext == '.vcf':
-                    fn = '{}.{}{}'.format(fn_base, p, fn_ext)
+                    fn = '{}.{}{}'.format(fn_base, pakket, fn_ext)
                 elif fn_ext == '.idx':
                     fn_base2, fn_ext2 = os.path.splitext(fn_base)
-                    fn = '{}.{}{}{}'.format(fn_base2, p, fn_ext2, fn_ext)
-
-                shutil.copyfile(f, '{}/{}/{}'.format(outputdir, p, fn))
+                    fn = '{}.{}{}{}'.format(fn_base2, pakket, fn_ext2, fn_ext)
+                if not cnvonly:
+                    shutil.copyfile(f, '{}/{}/{}'.format(outputdir, pakket, fn))
+                elif cnvonly:
+                    if fn.endswith('vcf') or fn.endswith('idx'):
+                        continue
+                    shutil.copyfile(f, '{}/{}/{}/{}'.format(outputdir, pakket, 'alleen cnv', fn))
 
 
 if __name__ == '__main__':
@@ -245,7 +249,7 @@ if __name__ == '__main__':
             if not os.path.isfile(snpcheckfile):
                 run_command('touch {}'.format(snpcheckfile))
         
-        run_snakemake = 'snakemake --rerun-incomplete -s {}/ngspipeline/Snakefile -j{} --configfile {} --directory {}'.format(SCRIPTHOME, threads, CONFIG, READS)
+        run_snakemake = 'snakemake --rerun-incomplete -s {}/ngspipeline/captures.snakefile -j{} --configfile {} --directory {}'.format(SCRIPTHOME, threads, CONFIG, READS)
         run_snakemake_amplicons = 'snakemake --rerun-incomplete -s {}/ngspipeline/amplicons.snakefile -j{} --configfile {} --directory {}'.format(SCRIPTHOME, threads, CONFIG, READS)
         
         if args.unlock:
