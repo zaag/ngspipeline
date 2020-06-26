@@ -29,6 +29,7 @@ from ngsscriptlibrary import sample_in_db
 from ngsscriptlibrary import get_patient_info
 from ngsscriptlibrary import get_rs_gpos_dict
 from ngsscriptlibrary import compare_snpchecks
+from ngsscriptlibrary import get_file_locations
 from ngsscriptlibrary import samplesheetinfo2db
 from ngsscriptlibrary import base_perc_reads2db
 from ngsscriptlibrary import get_snpcheck_serie
@@ -59,58 +60,6 @@ STANDAARDFRAGMENTEN = 'standaardfragmenten.xlsx'
 
 for fn in [TARGETDB, SNPCHECK, METRICSDB, SAMPLEDB, PATIENTDB, SAMPLESHEET]:
     assert os.path.isfile(fn), '{} bestaat niet'.format(fn)
-
-def get_file_locations(todo, targetrepo):
-    """Read dict with targets and analyses and add correct file locations.
-    Return dict
-    """
-    for s in todo.keys():
-        picard = '{}_target.interval_list'.format(todo[s]['capture'])
-        picard = os.path.join(targetrepo, 'captures', picard)
-
-        cnvtarget = '{}_target.bed'.format(todo[s]['capture'])
-        cnvtarget = os.path.join(targetrepo, 'captures', cnvtarget)
-
-        cap_is_pakket = todo[s]['capispakket']
-
-        if cap_is_pakket:
-            pakket_name = todo[s]['capture']
-            annot = '{}_target.annotated'.format(todo[s]['capture'])
-            annot = os.path.join(targetrepo, 'captures', annot)
-            varcal = '{}_generegions.bed'.format(todo[s]['capture'])
-            varcal = os.path.join(targetrepo, 'captures', varcal)
-            sanger = '{}_target.bed'.format(todo[s]['capture'])
-            sanger = os.path.join(targetrepo, 'captures', sanger)
-            pakket = '{}_target.bed'.format(todo[s]['capture'])
-            pakket = os.path.join(targetrepo, 'captures', pakket)
-        elif not cap_is_pakket:
-            pakket_name = todo[s]['pakket']
-            annot = '{}_target.annotated'.format(todo[s]['pakket'])
-            annot = os.path.join(targetrepo, 'pakketten', annot)
-            varcal = '{}_generegions.bed'.format(todo[s]['pakket'])
-            varcal = os.path.join(targetrepo, 'pakketten', varcal)
-            sanger = '{}_target.bed'.format(todo[s]['pakket'])
-            sanger = os.path.join(targetrepo, 'pakketten', sanger)
-            pakket = '{}_target.bed'.format(todo[s]['pakket'])
-            pakket = os.path.join(targetrepo, 'pakketten', pakket)
-        if todo[s]['panel'] is not None:
-            annot = '{}_target.annotated'.format(todo[s]['panel'])
-            annot = os.path.join(targetrepo, 'panels', annot)            
-            sanger = '{}_target.bed'.format(todo[s]['panel'])
-            sanger = os.path.join(targetrepo, 'panels', sanger)
-        if todo[s]['riskscore']:
-            riskscorevcf = '{}_riskscore.vcf'.format(todo[s]['genesis'])
-            riskscorevcf = os.path.join(targetrepo, 'varia', riskscorevcf)
-            todo[s]['riskscorevcf'] = riskscorevcf
-
-        todo[s]['annot'] = annot
-        todo[s]['picard'] = picard
-        todo[s]['cnvtarget'] = cnvtarget
-        todo[s]['pakkettarget'] = pakket
-        todo[s]['varcal'] = varcal
-        todo[s]['sanger'] = sanger
-
-    return todo
 
 def add_patient_info(todo, serie, db):
     for sample in todo.keys():
