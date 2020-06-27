@@ -155,7 +155,7 @@ rule seriereport:
 
         cnvonly = list()
         for sample in input_dict:
-            if input_dict[sample['cnvonly']]:
+            if input_dict[sample]['cnvonly']:
                 cnvonly.append(sample)
 
         if cnvonly:
