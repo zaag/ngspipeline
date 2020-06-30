@@ -153,6 +153,15 @@ rule seriereport:
             ws1.write(row1, 0, 'De volgende patiënten hebben afwijkende TaqMan calls: {}'.format(' '.join(taqmanerror)))
             row1 += 1
 
+        cnvonly = list()
+        for sample in input_dict:
+            if input_dict[sample]['cnvonly']:
+                cnvonly.append(sample)
+
+        if cnvonly:
+            ws1.write(row1, 0, 'De volgende patiënten hebben alleen output voor CNV-analyse: {}'.format(' '.join(cnvonly)))
+            row1 += 1
+
         rs2gpos = get_rs_gpos_dict()
         
         row1 += 1
