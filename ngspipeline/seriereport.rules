@@ -130,6 +130,7 @@ rule seriereport:
         loci = list()
         notaqman = list()
         taqmanerror = list()
+        allele_as_call = list()
 
         for sample, snpcheck_sample in snpcheck_serie.items():
             count = 0
@@ -142,6 +143,9 @@ rule seriereport:
                         taqmanerror.append(sample)
                 elif alt_call not in ['WT', 'HET', 'HOM']:
                     count += 1
+                if 'allele' in alt_call.lower():
+                    allele_as_call.append(sample)
+
             if count > 2:
                notaqman.append(sample)
             
@@ -151,6 +155,10 @@ rule seriereport:
 
         if taqmanerror:
             ws1.write(row1, 0, 'De volgende patiënten hebben afwijkende TaqMan calls: {}'.format(' '.join(taqmanerror)))
+            row1 += 1
+
+        if allele_as_call:
+            ws1.write(row1, 0, 'De volgende patiënten hebben Allele X of Y als TaqMan call: {}'.format(' '.join(allele_as_call)))
             row1 += 1
 
         cnvonly = list()

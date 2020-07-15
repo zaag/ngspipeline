@@ -185,9 +185,6 @@ rule samplereport:
             rsid = rs_gpos_dict[locus]
             snpcheck_ngs_result = snpcheck_data['NGS'][locus]
             snpcheck_alt_result = snpcheck_data['ALT'][locus]
-            if snpcheck_alt_result not in ['WT', 'HET', 'HOM']:
-                result = 'NoTaqMan'
-                snpcheck_alt_result = 'NoTaqMan'
             snpcheck_excel = [locus, rsid, snpcheck_ngs_result, snpcheck_alt_result, result]
             row1, col1 = write_list(snpcheck_excel,
                                     ws1, row=row1, col=0,
