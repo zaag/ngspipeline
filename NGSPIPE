@@ -259,9 +259,8 @@ if __name__ == '__main__':
             run_snakemake = f'{run_snakemake} --notemp'
             run_snakemake = f'{run_snakemake_amplicons} --notemp'
 
-        if not args.unlock and not args.notemp:
-            run_command(run_snakemake)
-            run_command(run_snakemake_amplicons)
+        run_command(run_snakemake)
+        run_command(run_snakemake_amplicons)
 
     if args.cleanup:
         amplicon_genesiscodes = TargetDatabase(TARGETDB).get_amplicon_genesiscode()
