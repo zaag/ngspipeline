@@ -1,115 +1,6 @@
 #!/usr/bin/env python
 
 
-def run_command(command):
-    subprocess.run(command, 
-                    shell=True, 
-                    check=True,
-                    stderr=subprocess.STDOUT)
-
-
-def create_dir(dir_to_create):
-    try:
-        os.makedirs(dir_to_create)
-    except FileExistsError as e:
-        print(e)
-
-
-def create_empty_excelfile(file_name):
-    from openpyxl import Workbook
-    wb = Workbook()
-    wb.save(file_name)
-
-
-def read_config_json(file_name):
-    with open(file_name) as f:
-        return json.load(f)[0]
-
-
-class DeleteSerie():
-    def __init__(self, db, serie):
-        self.conn = (sqlite3.connect(db))
-        self.c = self.conn.cursor()
-        self.serie = serie
-
-    def get_table_names(self):
-        self.c.execute('SELECT name FROM sqlite_master WHERE type="table"')
-        table_names = [val for tup in self.c.fetchall() for val in tup]
-        return table_names
-
-    def delete_serie_from_tables(self):
-        tables = self.get_table_names()
-        for table in tables:
-            try:
-                self.c.execute('DELETE FROM "{}" WHERE SERIE="{}"'.format(table, self.serie))
-            except sqlite3.OperationalError:
-                pass
-        self.conn.commit()
-        self.conn.close()
-
-
-def move_data_to_diagnostic_tree(sample_pakket, outputdir, workdir, serie, amplicons):
-    folders = ['CheckStaf',
-               'alleen cnv/brief gemaakt', 
-               'negatief/brief gemaakt', 
-               'positief/brief gemaakt']
-
-    cnv_output_dirs = glob.glob('{}/output/CNV_*'.format(workdir))
-
-    for cnv_output_dir in cnv_output_dirs:
-        cnv_dirname = os.path.basename(cnv_output_dir)
-        try:
-            shutil.copytree(cnv_output_dir, os.path.join(outputdir, cnv_dirname))
-        except OSError:
-            pass
-
-    shutil.copyfile('{}/output/MS{}_report.xlsx'.format(workdir, serie),
-                    '{}/MS{}_report.xlsx'.format(outputdir, serie))
-    shutil.copyfile('{}/output/MS{}_QC.pdf'.format(workdir, serie),
-                    '{}/MS{}_QC.pdf'.format(outputdir, serie))
-
-    pakketdone = list()
-
-    for sample, pakket, cnvonly in sample_pakket:
-
-        if 'amplicon' in pakket.lower():
-            continue
-        elif pakket.lower().startswith('chr'):
-            continue
-        elif pakket in amplicons:
-            continue
-
-        pakketdir = '{}/{}'.format(outputdir, pakket)
-
-        if pakket not in pakketdone:
-            pakketdone.append(pakket)
-            create_dir(pakketdir)
-            for folder in folders:
-                create_dir('{}/{}'.format(pakketdir, folder))
-
-        bam = glob.glob('{}/output/{}.*.bam'.format(workdir, sample))[0]
-        bai = glob.glob('{}/output/{}.*.bai'.format(workdir, sample))[0]
-        vcf = glob.glob('{}/output/{}.*.vcf'.format(workdir, sample))[0]
-        idx = glob.glob('{}/output/{}.*.vcf.idx'.format(workdir, sample))[0]
-        report = glob.glob('{}/output/{}.xlsx'.format(workdir, sample))[0]
-
-        for f in bam, bai, vcf, idx, report:
-            _fb, fn = os.path.split(f)
-            if not os.path.isfile('{}/{}/{}'.format(outputdir, pakket, fn)):
-                fn_base, fn_ext = os.path.splitext(fn)
-                if fn_ext == '.vcf':
-                    fn = '{}.{}{}'.format(fn_base, pakket, fn_ext)
-                elif fn_ext == '.idx':
-                    fn_base2, fn_ext2 = os.path.splitext(fn_base)
-                    fn = '{}.{}{}{}'.format(fn_base2, pakket, fn_ext2, fn_ext)
-                if not cnvonly:
-                    shutil.copyfile(f, '{}/{}/{}'.format(outputdir, pakket, fn))
-                elif cnvonly:
-                    if fn.endswith('vcf') or fn.endswith('idx'):
-                        continue
-                    shutil.copyfile(f, '{}/{}/{}/{}'.format(outputdir, pakket, 'alleen cnv', fn))
-
-
 if __name__ == '__main__':
     import os
     import glob
@@ -123,6 +14,11 @@ if __name__ == '__main__':
     from ngsscriptlibrary import parse_samplesheet_for_pipeline
     from ngsscriptlibrary import get_captures
     from ngsscriptlibrary import TargetDatabase
+    from ngsscriptlibrary import run_command
+    from ngsscriptlibrary import create_dir
+    from ngsscriptlibrary import create_empty_excelfile
+    from ngsscriptlibrary import read_config_json
+    from ngsscriptlibrary import move_data_to_diagnostic_tree
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-s", "--serie", type=str, 
@@ -165,7 +61,7 @@ if __name__ == '__main__':
 
     BASEDIR = '/data/dnadiag/reads'
     ARCHIEF = '/mnt/kg_nextgen_archief/IlluminaRawData/'
-    SCRIPTHOME = '/data/dnadiag/ngspipeline/'
+    SCRIPTHOME = os.path.dirname(os.path.realpath(__file__))
     CONFIG = os.path.join(SCRIPTHOME, 'ngspipeline', 'config.yaml')
     CONFIG_JSON = os.path.join(SCRIPTHOME, 'ngspipeline', 'config.json')
     READS = os.path.join(BASEDIR, 'MS{}'.format(serie))
