@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
     BASEDIR = '/data/dnadiag/reads'
     ARCHIEF = '/mnt/kg_nextgen_archief/IlluminaRawData/'
-    SCRIPTHOME = os.path.dirname(os.path.realpath(__file__))
+    SCRIPTHOME = '/data/dnadiag/ngspipeline/'
     CONFIG = os.path.join(SCRIPTHOME, 'ngspipeline', 'config.yaml')
     CONFIG_JSON = os.path.join(SCRIPTHOME, 'ngspipeline', 'config.json')
     READS = os.path.join(BASEDIR, 'MS{}'.format(serie))
