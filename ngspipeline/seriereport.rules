@@ -173,7 +173,7 @@ rule seriereport:
         standard_frags_no_initials = list()
         if os.path.isfile(STANDAARDFRAGMENTEN):
             df_serie = standaardfragmenten_naar_df(STANDAARDFRAGMENTEN)
-            standard_frags_no_initials = list(df_serie[df_serie['Initialen']]['FRACTIENR'])
+            standard_frags_no_initials = list(df_serie[df_serie['Initialen'] == '?']['FRACTIENR'])
             
 
         if standard_frags_no_initials:
