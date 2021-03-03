@@ -91,7 +91,6 @@ pakketten = get_pakketten(input_dict)
 samples = [s for s in input_dict.keys() if not input_dict[s]['amplicon']]
 serie = [input_dict[_]['serie'] for _ in input_dict.keys()][0]
 input_dict = add_patient_info(input_dict, serie, PATIENTDB)
-standard_frags_no_initials = list()
 
 # Rules for snakemake
 onsuccess:

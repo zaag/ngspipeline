@@ -230,8 +230,6 @@ rule samplereport:
                 out = [gene, chrom, start, end] 
                 for st in standaard_merged:
                     st_chrom, st_start, st_end, score, paraaf = st
-                    if paraaf == '?':
-                        standard_frags_no_initials.append(sample)
                     if st_start <= start and st_end >= end and st_chrom == chrom: 
                         out = [gene, chrom, start, end , score, paraaf]        
                 row2, col2 = write_list(out, ws2, row=row2, col=0,

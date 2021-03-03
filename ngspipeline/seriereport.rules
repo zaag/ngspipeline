@@ -170,6 +170,12 @@ rule seriereport:
             ws1.write(row1, 0, 'De volgende patiënten hebben alleen output voor CNV-analyse: {}'.format(' '.join(cnvonly)))
             row1 += 1
 
+        standard_frags_no_initials = list()
+        if os.path.isfile(STANDAARDFRAGMENTEN):
+            df_serie = standaardfragmenten_naar_df(STANDAARDFRAGMENTEN)
+            standard_frags_no_initials = list(df_serie[df_serie['Initialen']]['FRACTIENR'])
+            
+
         if standard_frags_no_initials:
             ws1.write(row1, 0, 'De volgende patiënten hebben niet afgetekende standaardfragmenten: {}'.format(' '.join(standard_frags_no_initials)))
             row1 += 1
