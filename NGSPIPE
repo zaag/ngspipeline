@@ -51,6 +51,8 @@ if __name__ == '__main__':
     basespace_serie = serie
     project = args.demultiplex
 
+    assert not serie.startswith('CTD'), "Verkeerde pipeline. Gebruik de CTD pipeline voor CTD series."
+
     if args.hester:
         basespace_serie = r'{}\ \(2\)'.format(serie)
 
