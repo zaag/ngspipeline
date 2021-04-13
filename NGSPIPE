@@ -3,6 +3,7 @@
 
 if __name__ == '__main__':
     import os
+    import sys
     import glob
     import json
     import shutil
@@ -51,7 +52,9 @@ if __name__ == '__main__':
     basespace_serie = serie
     project = args.demultiplex
 
-    assert not serie.startswith('CTD'), "Verkeerde pipeline. Gebruik de CTD pipeline voor CTD series."
+    if serie.startswith('CTD'):
+        print("Verkeerde pipeline. Gebruik de CTD pipeline voor CTD series.")
+        sys.exit()
 
     if args.hester:
         basespace_serie = r'{}\ \(2\)'.format(serie)
